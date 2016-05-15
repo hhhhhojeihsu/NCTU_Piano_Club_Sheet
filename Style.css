@@ -1,0 +1,44 @@
+/*  title   */
+h1
+{
+    text-align: center;
+    font-family: Arial, sans-serif;
+    font-size: xx-large;
+}
+
+/*  class for text centered */
+.text_centered
+{
+    text-align: center;
+}
+
+/*  let image to fit screen */
+/*
+reference: http://stackoverflow.com/questions/6169666/how-to-resize-an-image-to-fit-in-the-browser-window/35345577#35345577
+*/
+body
+{
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+img
+{
+    padding: 0;
+    display: block;
+    margin: 0 auto;
+    max-height: 100%;
+    max-width: 100%;
+}
+
+/*  center div  */
+/*
+reference: http://stackoverflow.com/questions/114543/horizontally-center-a-div-in-a-div
+*/
+
+.div_centered
+{
+    display: table;
+    margin: 0 auto;
+}
