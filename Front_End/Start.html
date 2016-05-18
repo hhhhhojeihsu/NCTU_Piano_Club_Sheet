@@ -4,15 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <title>交通大學鋼琴社琴房預約系統</title>
-    <link rel="icon" href="./Material/piano_icon.png">
+    <link rel="icon" href="Materialiano_icon.png">
     <link rel="stylesheet" type="text/css" href="Style.css">
     <!--    include jquery   -->
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.3/jquery.min.js"></script>
-    <!--    include third party google sheet api -->
-    <!--    reference: https://github.com/jsoma/tabletop -->
-    <script type="text/javascript" src="tabletop.js"></script>
-    <!--    core javascript -->
+    <!--    core javascript
     <script type="text/javascript" src="core.js"></script>
+    -->
 </head>
 
 <body>
@@ -24,13 +22,15 @@
 <!--    end of bulletin board   -->
 <!--    input box   -->
 <div id="login_area" class="div_centered">
-<form name="user_input" id="login_guest">
-    帳號:
-    <input type="text" name="user_id" placeholder="入社時登記之姓名" required>
+<form action="http://localhost:8888/process" method="POST" enctype="multipart/form-data" name="user_input" id="login_guest">
+    <fieldset>
+        <label for="user_id">帳號:</label>
+    <input type="text" id="user_id" name="user_id" placeholder="入社時登記之姓名" required>
     <br>
-    密碼:
-    <input type="password" id="user_pass" placeholder="您手機末4碼" required>
-    <input type="button" value="送出">
+        <label for="user_pass">密碼:</label>
+    <input type="password" name="user_pass" id="user_pass" placeholder="您手機末4碼" required>
+    <input type="submit" value="送出">
+    </fieldset>
 </form>
 </div>
 <p class="text_centered">如遇到任何技術上的問題或是bug，煩請通知管理員，謝謝。</p>
