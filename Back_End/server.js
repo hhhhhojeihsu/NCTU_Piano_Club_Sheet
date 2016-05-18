@@ -5,6 +5,7 @@ function start() {
     var formidable = require("formidable");
     var util = require('util');
     var server = express();
+    var sql = require('./sql');
 
     server.use(bodyParser.urlencoded({ extended: true }));
 
@@ -24,6 +25,16 @@ function start() {
         });
 
         form.on('end', function () {
+
+            /*  mysql   */
+            sql.connection.query('SELECT user_name FROM info', function(err, rows, fields) {
+                if (err) throw err;
+                console.log(rows[1].user_name);
+            });
+            sql.connection.end();
+            /*  mysql   */
+
+
             res.writeHead(200, {
                 'content-type': 'text/plain'
             });
