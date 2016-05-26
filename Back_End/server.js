@@ -24,24 +24,37 @@ function start() {
             fields[field] = value;
         });
 
-        form.on('end', function () {
-
+        form.on('end', function (){
             /*  mysql   */
-            sql.connection.query('SELECT user_name FROM info', function(err, rows, fields) {
+            //search user name
+            var user_name = fields['user_name'];
+            var user_pass = fields['user_pass'];
+            sql.connection.query("SELECT * FROM users", function(err, rows, fields) {
                 if (err) throw err;
-                console.log(rows[1].user_name);
+                for(var counter = 0; counter < rows.length; ++counter)
+                {
+                    if(rows[counter].user_name === user_name && rows[counter].user_password === user_pass)
+                    {
+                        console.log("Users: " + rows[counter].user_name + " Pass: " + rows[counter].user_password);
+                        break;
+                    }
+                }
+                if(counter == rows.length)
+                {
+                    res.writeHead(302,
+                        {Location: 'http://localhost:63342/NCTU_Piano_Club_Sheet/Front_End/Fail.html'}
+                    );
+                    res.end();
+                }
+                else
+                {
+                    res.writeHead(200, {
+                        'content-type': 'text/plain'
+                    });
+                    res.write('Login Success\n\n');
+                    res.end();
+                }
             });
-            sql.connection.end();
-            /*  mysql   */
-
-
-            res.writeHead(200, {
-                'content-type': 'text/plain'
-            });
-            res.write('received the data:\n\n');
-            res.end(util.inspect({
-                fields: fields
-            }));
         });
         form.parse(req);
     }
