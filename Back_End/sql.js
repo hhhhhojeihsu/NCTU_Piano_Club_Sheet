@@ -6,7 +6,7 @@ var connection = mysql.createConnection({
     password : 'abc',
     database : 'info'
 });
-//password is abcd on pc, abc on mac remember to change it
+
 
 connection.connect();
 
