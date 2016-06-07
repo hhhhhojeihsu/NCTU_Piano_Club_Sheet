@@ -34,7 +34,7 @@ function start(){
             var user_id = fields['user_name'];
             sql.connection.query("SELECT * FROM users", function (err, rows, fields)
             {
-                if (err) throw err;
+                if(err) throw err;
                 for (var counter = 0; counter < rows.length; ++counter)
                 {
                     if (rows[counter].user_name === user_name && rows[counter].user_password === user_pass)
@@ -46,7 +46,7 @@ function start(){
                 /*  admin mode  */
                 //TODO: implmentation of admin mode
                 /*  user mode   */
-                if (counter === 2)
+                if(counter === 2)
                 {
                     var now = new Date();
                     var FirstDayOfWeek = new Date();
@@ -72,7 +72,7 @@ function start(){
                         var ctr_selected = 0;
                         var ctr_oth_not_selected = 0;
                         header += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
-
+                        header += "<script type='text/javascript' src='http://localhost:63342/NCTU_Piano_Club_Sheet/Front_End/form_valid.js'></script>";
                         /*  body    */
                         body += "您欲輸入的名字是'"+ user_id + "' ";
                         /*  no record found  */
@@ -149,7 +149,7 @@ function start(){
 
                             /*  point to the selectable form for user   */
                             body += "<table>";
-                            body += "<form action='http://localhost:8888/process_user' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";
+                            body += "<form action='http://localhost:8888/process_user' onsubmit='return validateForm()' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";
                             body += "<tr><td colspan='8'>每週最多八個時段 每天最多三個時段</td></tr>";
                             body += "<tr>";
                             body += "<td></td>";
@@ -207,14 +207,18 @@ function start(){
                                     {
                                         body += "<input type='checkbox' name='";
                                         body += "c";
+                                        body += Math.floor(ctr_day / 2);
+                                        body += "_";
                                         body += ctr_hr;
                                         body += "_";
-                                        body += ctr_day;
+                                        body += ctr_day % 2;
                                         body += "' value='";
                                         body += "c";
+                                        body += Math.floor(ctr_day / 2);
+                                        body += "_";
                                         body += ctr_hr;
                                         body += "_";
-                                        body += ctr_day;
+                                        body += ctr_day % 2;
                                         body += "'";
                                         if(rows.length !== 0 && ctr_selected < rows.length)
                                         {
@@ -246,7 +250,7 @@ function start(){
                     });
                 }
                 /*  login failed    */
-                if(counter === rows.length)
+                else
                 {
                     console.log("Attempt failed with User: " + user_name + " Pass: " + user_pass + " detected");
                     res.redirect('http://localhost:63342/NCTU_Piano_Club_Sheet/Front_End/Fail.html');
