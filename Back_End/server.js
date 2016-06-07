@@ -16,8 +16,6 @@ function start(){
         UserQuery(req, res);
     });
 
-
-
     function UserPageProcess(req, res){
         //Store the data from the fields in your data store.
         //The data store could be a file or database or any other store based
@@ -53,13 +51,18 @@ function start(){
                     var now = new Date();
                     var FirstDayOfWeek = new Date();
                     var day_cht = "日一二三四五六日";
-                    var query = "SELECT * FROM schedule WHERE date >";
+                    var query = "SELECT * FROM schedule WHERE date >= ";
+                    var query_oth = "";
                     var days_this_mon = ((new Date(now.getFullYear(), now.getMonth() + 1, 1)) - (new Date(now.getFullYear(), now.getMonth(), 1)))/60/60/24/1000;	//how many days
                     FirstDayOfWeek.setDate(now.getDate() - now.getDay());
                     query += "'" + FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
-                    query += "AND name = '";
+                    query_oth = query;
+                    query += " AND name = '";
+                    query_oth += " AND name != '";
                     query += user_id + "'";
-                    query += " ORDER BY 'date' DESC";
+                    query_oth += user_id + "'";
+                    query += " ORDER BY date ASC, time ASC";
+                    query_oth += " ORDER BY time ASC, date ASC";
                     sql.connection.query(query, function(err, rows, fields)
                     {
                         var html = "";
@@ -67,10 +70,11 @@ function start(){
                         var body = '';
                         var record = [];
                         var ctr_selected = 0;
+                        var ctr_oth_not_selected = 0;
                         header += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
 
                         /*  body    */
-                        body += "您欲輸入的名字是"+ user_id;
+                        body += "您欲輸入的名字是'"+ user_id + "' ";
                         /*  no record found  */
                         if(rows.length == 0)
                         {
@@ -118,102 +122,132 @@ function start(){
                         }
                         body += "<br>";
 
-                        /*  point to the selectable form for user   */
-                        body += "<table>";
-                        body += "<form action='http://localhost:8888/process_user' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";
-                        body += "<tr><td colspan='8'>每週最多八個時段 每天最多三個時段</td></tr>"
-                        body += "<tr>";
-                        body += "<td></td>";
-                        for(var ctr_day = 0; ctr_day < 7; ++ctr_day)
-                        {
-                            body += "<td colspan='2'>";
-                            if(FirstDayOfWeek.getDate() + ctr_day > days_this_mon)
-                            {
-                                body += now.getMonth() + 1;
-                                body += "/";
-                                body += (FirstDayOfWeek.getDate() + ctr_day) - days_this_mon;
-                            }
-                            else
-                            {
-                                body += now.getMonth() + 1;
-                                body += "/";
-                                body += FirstDayOfWeek.getDate() + ctr_day;
-                            }
-                            body += " (";
-                            body += day_cht.substring(ctr_day, ctr_day + 1);
-                            body += ")";
-                            body += "</td>";
-                        }
-                        body += "</tr>";
+                        sql.connection.query(query_oth, function(err, rows_oth, fields){
 
-                        body += "<tr>";
-                        body += "<td></td>";
-                        for(var ctr_room = 0; ctr_room < 7; ++ctr_room)
-                        {
-                            body += "<td>";
-                            body += "409";
-                            body += "</td>";
-                            body += "<td>";
-                            body += "417";
-                            body += "</td>";
-                        }
-                        body += "</tr>";
-
-
-                        for(var ctr_hr = 0; ctr_hr <= 23; ++ctr_hr)
-                        {
-                            body += "<tr>";
-                            body += "<td>";
-                            if(ctr_hr < 10) body += "0";
-                            body += ctr_hr;
-                            body += ":00 ~ ";
-                            if(ctr_hr + 1 < 10) body += "0";
-                            if(ctr_hr + 1 == 24) body += "00";
-                            else body += (ctr_hr + 1);
-                            body += ":00";
-                            body += "</td>";
-                            for(var ctr_day = 0; ctr_day < 14; ++ctr_day)
-                            {
-                                body += "<td>";
-                                body += "<input type='checkbox' name='";
-                                body += "c";
-                                body += ctr_hr;
-                                body += "_";
-                                body += ctr_day;
-                                body += "' value='";
-                                body += "c";
-                                body += ctr_hr;
-                                body += "_";
-                                body += ctr_day;
-                                body += "'";
-                                if(rows.length !== 0 && ctr_selected < rows.length)
+                            /*  parsing other users */
+                            //resort the array
+                            rows.sort(function(a, b){
+                                if(a.time > b.time) return 1;
+                                else if(a.time === b.time)
                                 {
-                                    if(ctr_hr === rows[ctr_selected].time && ctr_day % 2 === rows[ctr_selected].room && FirstDayOfWeek.getDate() + Math.floor(ctr_day /2) === record[ctr_selected].getDate())
-                                    {
-                                        body += "checked";
-                                        ++ctr_selected;
-                                    }
+                                    if(a.date > b.time) return 1;
+                                    else return -1;
                                 }
-                                body += ">";
+                                else return -1;
+                            });
+                            for(var ctr_self_sort = 0; ctr_self_sort < rows.length; ++ctr_self_sort)
+                            {
+                                record[ctr_self_sort] = ParseSqlDateCht(rows[ctr_self_sort].date + "");
+                            }
+
+
+                            var record_oth = [];
+                            for(var ctr_rec_oth = 0; ctr_rec_oth < rows_oth.length; ++ctr_rec_oth)
+                            {
+                                record_oth[ctr_rec_oth] = ParseSqlDateCht(rows_oth[ctr_rec_oth].date + "");
+                            }
+
+                            /*  point to the selectable form for user   */
+                            body += "<table>";
+                            body += "<form action='http://localhost:8888/process_user' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";
+                            body += "<tr><td colspan='8'>每週最多八個時段 每天最多三個時段</td></tr>";
+                            body += "<tr>";
+                            body += "<td></td>";
+                            for(var ctr_day = 0; ctr_day < 7; ++ctr_day)
+                            {
+                                body += "<td colspan='2'>";
+                                if (FirstDayOfWeek.getDate() + ctr_day > days_this_mon)
+                                {
+                                    body += now.getMonth() + 1;
+                                    body += "/";
+                                    body += (FirstDayOfWeek.getDate() + ctr_day) - days_this_mon;
+                                }
+                                else
+                                {
+                                    body += now.getMonth() + 1;
+                                    body += "/";
+                                    body += FirstDayOfWeek.getDate() + ctr_day;
+                                }
+                                body += " (";
+                                body += day_cht.substring(ctr_day, ctr_day + 1);
+                                body += ")";
                                 body += "</td>";
                             }
                             body += "</tr>";
-                        }
-                        //TODO: INPUT BUTTON
-                        body += "<tr><td><input type='submit' value='送出'></td>";
-                        body += "</form>";
-                        body += "</table>";
 
-                        html = '<!DOCTYPE html><html lang="zh-Hant">' + '<html><header>' + header + '</header><body>' + body + '</body></html>';
-                        /*  print out the page  */
-                        res.writeHead(200, {
-                            'Content-Type': 'text/html'
+                            body += "<tr>";
+                            body += "<td></td>";
+                            for(var ctr_room = 0; ctr_room < 7; ++ctr_room)
+                            {
+                                body += "<td>";
+                                body += "409";
+                                body += "</td>";
+                                body += "<td>";
+                                body += "417";
+                                body += "</td>";
+                            }
+                            body += "</tr>";
+                            for(var ctr_hr = 0; ctr_hr <= 23; ++ctr_hr)
+                            {
+                                body += "<tr>";
+                                body += "<td>";
+                                if(ctr_hr < 10) body += "0";
+                                body += ctr_hr;
+                                body += ":00 ~ ";
+                                if(ctr_hr + 1 < 10) body += "0";
+                                if(ctr_hr + 1 == 24) body += "00";
+                                else body += (ctr_hr + 1);
+                                body += ":00";
+                                body += "</td>";
+                                for(var ctr_day = 0; ctr_day < 14; ++ctr_day)
+                                {
+                                    /*  TODO: CROSS MONTH BUG   */
+                                    body += "<td>";
+                                    if(ctr_oth_not_selected >= rows_oth.length || ctr_hr !== rows_oth[ctr_oth_not_selected].time || ctr_day % 2 !== rows_oth[ctr_oth_not_selected].room || FirstDayOfWeek.getDate() + Math.floor(ctr_day / 2) !== record_oth[ctr_oth_not_selected].getDate())
+                                    {
+                                        body += "<input type='checkbox' name='";
+                                        body += "c";
+                                        body += ctr_hr;
+                                        body += "_";
+                                        body += ctr_day;
+                                        body += "' value='";
+                                        body += "c";
+                                        body += ctr_hr;
+                                        body += "_";
+                                        body += ctr_day;
+                                        body += "'";
+                                        if(rows.length !== 0 && ctr_selected < rows.length)
+                                        {
+                                            if(ctr_hr === rows[ctr_selected].time && ctr_day % 2 === rows[ctr_selected].room && FirstDayOfWeek.getDate() + Math.floor(ctr_day / 2) === record[ctr_selected].getDate())
+                                            {
+                                                body += "checked";
+                                                ++ctr_selected;
+                                            }
+                                        }
+                                        body += ">";
+                                    }
+                                    else ++ctr_oth_not_selected;
+                                    body += "</td>";
+                                }
+                                body += "</tr>";
+                            }
+                            //TODO: INPUT BUTTON
+                            body += "<tr><td><input type='submit' value='送出'></td>";
+                            body += "</form>";
+                            body += "</table>";
+
+                            html = '<!DOCTYPE html><html lang="zh-Hant">' + '<html><header>' + header + '</header><body>' + body + '</body></html>';
+                            /*  print out the page  */
+                            res.writeHead(200, {
+                                'Content-Type': 'text/html'
+                            });
+                            res.end(html);
                         });
-                        res.end(html);
                     });
                 }
                 /*  login failed    */
-                if (counter === rows.length) {
+                if(counter === rows.length)
+                {
                     console.log("Attempt failed with User: " + user_name + " Pass: " + user_pass + " detected");
                     res.redirect('http://localhost:63342/NCTU_Piano_Club_Sheet/Front_End/Fail.html');
                     res.end();
