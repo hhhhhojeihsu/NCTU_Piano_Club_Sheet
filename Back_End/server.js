@@ -1,6 +1,6 @@
 "use strict";
 
-function start() {
+function start(){
     var express = require('express');
     var bodyParser = require('body-parser');
     var fs = require('fs');
@@ -9,23 +9,26 @@ function start() {
     var server = express();
     var sql = require('./sql');
     server.use(bodyParser.urlencoded({extended: true}));
-
-
-    server.post('/process', function (req, res) {
-        processFormFieldsIndividual(req, res);
+    server.post('/process', function(req, res){
+        UserPageProcess(req, res);
+    });
+    server.post('/process_user', function(req, res){
+        UserQuery(req, res);
     });
 
-    function processFormFieldsIndividual(req, res) {
+
+
+    function UserPageProcess(req, res){
         //Store the data from the fields in your data store.
         //The data store could be a file or database or any other store based
         //on your application.
         var fields = [];
         var form = new formidable.IncomingForm();
-        form.on('field', function (field, value) {
+        form.on('field', function(field, value){
             fields[field] = value;
         });
 
-        form.on('end', function () {
+        form.on('end', function (){
             /*  mysql   */
             //search user name
             var user_name = fields['user_id'];
@@ -77,7 +80,7 @@ function start() {
                         else    //show booked
                         {
                             console.log(user_id + " access system with " + rows.length + " record found");
-                            body += "您目前登記的有: <br>";
+                            body += "您目前登記的有: <br><br>";
                             /*  booked  */
                             body += "<table>";
                             body += "<tr>" + "<td>" + "日期" + "</td>" + "<td>" + "時間" + "</td>" + "<td>" + "房號" + "</td>" + "</tr>";
@@ -114,8 +117,11 @@ function start() {
                             body += "</table>";
                         }
                         body += "<br>";
+
                         /*  point to the selectable form for user   */
                         body += "<table>";
+                        body += "<form action='http://localhost:8888/process_user' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";
+                        body += "<tr><td colspan='8'>每週最多八個時段 每天最多三個時段</td></tr>"
                         body += "<tr>";
                         body += "<td></td>";
                         for(var ctr_day = 0; ctr_day < 7; ++ctr_day)
@@ -153,7 +159,7 @@ function start() {
                         }
                         body += "</tr>";
 
-                        body += "<form>";
+
                         for(var ctr_hr = 0; ctr_hr <= 23; ++ctr_hr)
                         {
                             body += "<tr>";
@@ -170,15 +176,16 @@ function start() {
                             {
                                 body += "<td>";
                                 body += "<input type='checkbox' name='";
-                                body += ctr_day;
-                                body += "_";
+                                body += "c";
                                 body += ctr_hr;
+                                body += "_";
+                                body += ctr_day;
                                 body += "' value='";
-                                body += ctr_day;
-                                body += "_";
+                                body += "c";
                                 body += ctr_hr;
+                                body += "_";
+                                body += ctr_day;
                                 body += "'";
-                                //TODO: IF SELECTED
                                 if(rows.length !== 0 && ctr_selected < rows.length)
                                 {
                                     if(ctr_hr === rows[ctr_selected].time && ctr_day % 2 === rows[ctr_selected].room && FirstDayOfWeek.getDate() + Math.floor(ctr_day /2) === record[ctr_selected].getDate())
@@ -193,9 +200,9 @@ function start() {
                             body += "</tr>";
                         }
                         //TODO: INPUT BUTTON
+                        body += "<tr><td><input type='submit' value='送出'></td>";
                         body += "</form>";
                         body += "</table>";
-
 
                         html = '<!DOCTYPE html><html lang="zh-Hant">' + '<html><header>' + header + '</header><body>' + body + '</body></html>';
                         /*  print out the page  */
@@ -215,11 +222,35 @@ function start() {
         });
         form.parse(req);
     }
+
+    function UserQuery(req, res)
+    {
+
+        var form = new formidable.IncomingForm();
+        var fields = [];
+        form.on('field', function(field, value){
+            fields.push(value);
+        });
+
+        form.on('end', function(){
+            res.writeHead(200, {'content-type': 'text/plain'});
+            res.write('received upload:\n\n');
+            res.end(util.inspect({fields: fields}));
+        });
+
+        form.parse(req);
+    }
+
+
     server.listen(8888, function ()
     {
         console.log('Server running at http://localhost:8888/');
     });
 }
+
+
+
+
 
 function ParseSqlDateCht(input)
 {
@@ -261,7 +292,7 @@ Number.prototype.pad = function(size)
     var s = String(this);
     while (s.length < (size || 2)) s = "0" + s;
     return s;
-}
+};
 
 
 exports.start = start;
