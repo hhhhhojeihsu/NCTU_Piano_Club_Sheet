@@ -1,8 +1,8 @@
--- MySQL dump 10.13  Distrib 5.7.9, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 5.7.9, for osx10.9 (x86_64)
 --
--- Host: localhost    Database: info
+-- Host: 127.0.0.1    Database: info
 -- ------------------------------------------------------
--- Server version	5.7.12-log
+-- Server version	5.7.12
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -30,7 +30,7 @@ CREATE TABLE `schedule` (
   `name` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_UNIQUE` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -39,7 +39,7 @@ CREATE TABLE `schedule` (
 
 LOCK TABLES `schedule` WRITE;
 /*!40000 ALTER TABLE `schedule` DISABLE KEYS */;
-INSERT INTO `schedule` VALUES (1,'2016-06-01',8,1,'王八蛋'),(2,'2016-06-08',15,0,'王八蛋');
+INSERT INTO `schedule` VALUES (1,'2016-06-01',8,1,'王八蛋'),(2,'2016-06-08',0,0,'王八蛋'),(3,'2016-06-10',12,0,'王八蛋'),(4,'2016-06-10',13,0,'豬八戒'),(5,'2016-06-05',1,1,'劉大師'),(6,'2016-06-07',23,1,'趙大師'),(7,'2016-06-10',17,1,'劉氓'),(8,'2016-06-11',3,0,'王八蛋'),(9,'2016-06-08',7,1,'王八蛋'),(10,'2016-06-11',5,0,'王八蛋'),(11,'2016-06-11',23,1,'王八蛋');
 /*!40000 ALTER TABLE `schedule` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -52,4 +52,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-05-31  0:58:54
+-- Dump completed on 2016-06-08 22:28:10
