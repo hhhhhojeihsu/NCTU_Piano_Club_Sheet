@@ -271,17 +271,15 @@ function start(){
         });
 
         form.on('end', function(){
-            res.writeHead(200, {'content-type': 'text/plain'});
-            res.write('received upload:\n\n');
-            res.end(util.inspect({fields: fields}));
+            var query = ParseCheckbox(fields);
+            
         });
 
         form.parse(req);
     }
 
 
-    server.listen(8888, function ()
-    {
+    server.listen(8888, function(){
         console.log('Server running at http://localhost:8888/');
     });
 }
@@ -332,5 +330,40 @@ Number.prototype.pad = function(size)
     return s;
 };
 
+
+/*  parsing checkbox content    */
+//input is an array with field
+function ParseCheckbox(input)
+{
+
+    var res = [];
+    for(var ctr_all = 0; ctr_all < input.length; ++ctr_all)
+    {
+        var temp = [];
+        var now = new Date();
+        var FirstDayOfWeek = new Date();
+        var days_this_mon = ((new Date(now.getFullYear(), now.getMonth() + 1, 1)) - (new Date(now.getFullYear(), now.getMonth(), 1)))/60/60/24/1000;	//how many days
+        FirstDayOfWeek.setDate(now.getDate() - now.getDay());
+
+
+        var date_temp = FirstDayOfWeek;
+        var time_temp = 0;
+        var room_temp = 0;
+        var string = input[ctr_all] + "";
+        var pos_l = 1;
+        var pos_r = pos_l + 1;
+        date_temp.setDate(date_temp.getDate() + Number(string.substring(pos_l, pos_r)));
+        pos_l = pos_r + 1;
+        pos_r = string.indexOf("_", pos_l);
+        time_temp = Number(string.substring(pos_l, pos_r));
+        pos_l = pos_r + 1;
+        room_temp = Number(string.substring(pos_l, pos_l + 1));
+        temp[0] = date_temp;
+        temp[1] = time_temp;
+        temp[2] = room_temp;
+        res[ctr_all] = temp;
+    }
+    return res;
+}
 
 exports.start = start;
