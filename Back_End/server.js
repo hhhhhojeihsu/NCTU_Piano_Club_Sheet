@@ -1,5 +1,7 @@
 "use strict";
 
+var sql = require('./sql');
+
 function start(){
     var express = require('express');
     var bodyParser = require('body-parser');
@@ -7,7 +9,6 @@ function start(){
     var formidable = require("formidable");
     var util = require('util');
     var server = express();
-    var sql = require('./sql');
     server.use(bodyParser.urlencoded({extended: true}));
     server.post('/process', function(req, res){
         UserPageProcess(req, res);
@@ -150,6 +151,9 @@ function start(){
                             /*  point to the selectable form for user   */
                             body += "<table>";
                             body += "<form action='http://localhost:8888/process_user' onsubmit='return validateForm()' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";
+                            body += "<input style='display: none;' type='text' id='hid_user' name='hid_user' value='";
+                            body += user_id;
+                            body += "' required >";
                             body += "<tr><td colspan='8'>每週最多八個時段 每天最多三個時段</td></tr>";
                             body += "<tr>";
                             body += "<td></td>";
@@ -235,7 +239,6 @@ function start(){
                                 }
                                 body += "</tr>";
                             }
-                            //TODO: INPUT BUTTON
                             body += "<tr><td><input type='submit' value='送出'></td>";
                             body += "</form>";
                             body += "</table>";
@@ -271,8 +274,46 @@ function start(){
         });
 
         form.on('end', function(){
+            //NOTE THAT THE FIRST ONE IN ARRAY IS USER NAME
             var query = ParseCheckbox(fields);
-            
+            SqlRequestRecursive(query, 0);
+        /*
+            for(var ctr_qry = 0; ctr_qry < query.length; ++ctr_qry)
+            {
+                console.log(ctr_qry);
+                var qry_str = "SELECT name from schedule WHERE date = '";
+                qry_str += query[ctr_qry][0].getFullYear() + "-" + (query[ctr_qry][0].getMonth() + 1) + "-" + query[ctr_qry][0].getDate();
+                qry_str += "'";
+                qry_str += "AND time = ";
+                qry_str += query[ctr_qry][1];
+                qry_str += " AND room = ";
+                qry_str += query[ctr_qry][2];
+                sql.connection.query(qry_str, function(err, rows_chk, fields){
+                    //no record found
+                    if(rows_chk.length === 0)
+                    {
+                        console.log(ctr_qry);
+                        var sql_str_written = "INSERT INTO 'info'.'schedule'('date', 'time', 'room', 'name') VALUES('";
+                        sql_str_written += query[ctr_qry][0].getFullYear() + "-" + (query[ctr_qry][0].getMonth() + 1) + "-" + query[ctr_qry][0].getDate();
+                        sql_str_written += "', '";
+                        sql_str_written += query[ctr_qry][1];
+                        sql_str_written += "', '";
+                        sql_str_written += query[ctr_qry][2];
+                        sql_str_written += "', '";
+                        sql_str_written += fields[0];
+                        sql_str_written += "')";
+                    }
+                    //check if name is not the same as the one
+                    else if(rows_chk[0].name !== fields[0])
+                    {
+
+                    }
+                    //if the name is the recived one then do nothing
+
+                });
+
+            }
+        */
         });
 
         form.parse(req);
@@ -285,6 +326,43 @@ function start(){
 }
 
 
+function SqlRequestRecursive(query, ctr_qry)
+{
+    var qry_str = "SELECT name from schedule WHERE date = '";
+    console.log(ctr_qry);
+    qry_str += query[ctr_qry][0].getFullYear() + "-" + (query[ctr_qry][0].getMonth() + 1) + "-" + query[ctr_qry][0].getDate();
+    qry_str += "'";
+    qry_str += "AND time = ";
+    qry_str += query[ctr_qry][1];
+    qry_str += " AND room = ";
+    qry_str += query[ctr_qry][2];
+    sql.connection.query(qry_str, function(err, rows_chk, fields){
+        //no record found
+        if(rows_chk.length === 0)
+        {
+            console.log(ctr_qry);
+            var sql_str_written = "INSERT INTO 'info'.'schedule'('date', 'time', 'room', 'name') VALUES('";
+            sql_str_written += query[ctr_qry][0].getFullYear() + "-" + (query[ctr_qry][0].getMonth() + 1) + "-" + query[ctr_qry][0].getDate();
+            sql_str_written += "', '";
+            sql_str_written += query[ctr_qry][1];
+            sql_str_written += "', '";
+            sql_str_written += query[ctr_qry][2];
+            sql_str_written += "', '";
+            sql_str_written += fields[0];
+            sql_str_written += "')";
+        }
+        //check if name is not the same as the one
+        else if(rows_chk[0].name !== fields[0])
+        {
+
+        }
+        //if the name is the recived one then do nothing
+
+        if(ctr_qry !== query.length) SqlRequestRecursive(query, ctr_qry + 1);
+        return;
+    });
+
+}
 
 
 
@@ -337,7 +415,8 @@ function ParseCheckbox(input)
 {
 
     var res = [];
-    for(var ctr_all = 0; ctr_all < input.length; ++ctr_all)
+    //NOTE THAT THE FIRST ONE IN 'input' ARRAY IS USER NAME
+    for(var ctr_all = 1; ctr_all < input.length; ++ctr_all)
     {
         var temp = [];
         var now = new Date();
@@ -361,7 +440,7 @@ function ParseCheckbox(input)
         temp[0] = date_temp;
         temp[1] = time_temp;
         temp[2] = room_temp;
-        res[ctr_all] = temp;
+        res[ctr_all - 1] = temp;
     }
     return res;
 }
