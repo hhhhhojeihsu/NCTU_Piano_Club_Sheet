@@ -276,32 +276,30 @@ function start(){
         form.on('end', function(){
             //NOTE THAT THE FIRST ONE IN ARRAY IS USER NAME
             var query = ParseCheckbox(fields);
-            SqlRequestRecursive(query, 0);
-        /*
-            for(var ctr_qry = 0; ctr_qry < query.length; ++ctr_qry)
-            {
-                console.log(ctr_qry);
+            //reference: http://stackoverflow.com/questions/750486/javascript-closure-inside-loops-simple-practical-example
+            query.forEach(function(element){
                 var qry_str = "SELECT name from schedule WHERE date = '";
-                qry_str += query[ctr_qry][0].getFullYear() + "-" + (query[ctr_qry][0].getMonth() + 1) + "-" + query[ctr_qry][0].getDate();
+                qry_str += element[0].getFullYear() + "-" + (element[0].getMonth() + 1) + "-" + element[0].getDate();
                 qry_str += "'";
                 qry_str += "AND time = ";
-                qry_str += query[ctr_qry][1];
+                qry_str += element[1];
                 qry_str += " AND room = ";
-                qry_str += query[ctr_qry][2];
-                sql.connection.query(qry_str, function(err, rows_chk, fields){
+                qry_str += element[2];
+                sql.connection.query(qry_str, function(err, rows_chk, fields_func){
                     //no record found
                     if(rows_chk.length === 0)
                     {
-                        console.log(ctr_qry);
                         var sql_str_written = "INSERT INTO 'info'.'schedule'('date', 'time', 'room', 'name') VALUES('";
-                        sql_str_written += query[ctr_qry][0].getFullYear() + "-" + (query[ctr_qry][0].getMonth() + 1) + "-" + query[ctr_qry][0].getDate();
+                        sql_str_written += element[0].getFullYear() + "-" + (element[0].getMonth() + 1) + "-" + element[0].getDate();
                         sql_str_written += "', '";
-                        sql_str_written += query[ctr_qry][1];
+                        sql_str_written += element[1];
                         sql_str_written += "', '";
-                        sql_str_written += query[ctr_qry][2];
+                        sql_str_written += element[2];
                         sql_str_written += "', '";
                         sql_str_written += fields[0];
                         sql_str_written += "')";
+                        console.log(element);
+                        console.log(sql_str_written);
                     }
                     //check if name is not the same as the one
                     else if(rows_chk[0].name !== fields[0])
@@ -309,11 +307,8 @@ function start(){
 
                     }
                     //if the name is the recived one then do nothing
-
                 });
-
-            }
-        */
+            });
         });
 
         form.parse(req);
@@ -326,43 +321,6 @@ function start(){
 }
 
 
-function SqlRequestRecursive(query, ctr_qry)
-{
-    var qry_str = "SELECT name from schedule WHERE date = '";
-    console.log(ctr_qry);
-    qry_str += query[ctr_qry][0].getFullYear() + "-" + (query[ctr_qry][0].getMonth() + 1) + "-" + query[ctr_qry][0].getDate();
-    qry_str += "'";
-    qry_str += "AND time = ";
-    qry_str += query[ctr_qry][1];
-    qry_str += " AND room = ";
-    qry_str += query[ctr_qry][2];
-    sql.connection.query(qry_str, function(err, rows_chk, fields){
-        //no record found
-        if(rows_chk.length === 0)
-        {
-            console.log(ctr_qry);
-            var sql_str_written = "INSERT INTO 'info'.'schedule'('date', 'time', 'room', 'name') VALUES('";
-            sql_str_written += query[ctr_qry][0].getFullYear() + "-" + (query[ctr_qry][0].getMonth() + 1) + "-" + query[ctr_qry][0].getDate();
-            sql_str_written += "', '";
-            sql_str_written += query[ctr_qry][1];
-            sql_str_written += "', '";
-            sql_str_written += query[ctr_qry][2];
-            sql_str_written += "', '";
-            sql_str_written += fields[0];
-            sql_str_written += "')";
-        }
-        //check if name is not the same as the one
-        else if(rows_chk[0].name !== fields[0])
-        {
-
-        }
-        //if the name is the recived one then do nothing
-
-        if(ctr_qry !== query.length) SqlRequestRecursive(query, ctr_qry + 1);
-        return;
-    });
-
-}
 
 
 
@@ -423,8 +381,6 @@ function ParseCheckbox(input)
         var FirstDayOfWeek = new Date();
         var days_this_mon = ((new Date(now.getFullYear(), now.getMonth() + 1, 1)) - (new Date(now.getFullYear(), now.getMonth(), 1)))/60/60/24/1000;	//how many days
         FirstDayOfWeek.setDate(now.getDate() - now.getDay());
-
-
         var date_temp = FirstDayOfWeek;
         var time_temp = 0;
         var room_temp = 0;
