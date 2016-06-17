@@ -66,6 +66,7 @@ function start(){
                     query_oth += " ORDER BY time ASC, date ASC";
                     sql.connection.query(query, function(err, rows, fields)
                     {
+                        if(err) throw err;
                         var html = "";
                         var header = '';
                         var body = '';
@@ -125,6 +126,8 @@ function start(){
 
                         sql.connection.query(query_oth, function(err, rows_oth, fields){
 
+
+                            if(err) throw err;
                             /*  parsing other users */
                             //resort the array
                             rows.sort(function(a, b){
@@ -266,7 +269,9 @@ function start(){
 
     function UserQuery(req, res)
     {
-
+        var now = new Date();
+        var FirstDayOfWeek = new Date();
+        FirstDayOfWeek.setDate(now.getDate() - now.getDay());
         var form = new formidable.IncomingForm();
         var fields = [];
         form.on('field', function(field, value){
@@ -274,39 +279,104 @@ function start(){
         });
 
         form.on('end', function(){
+            console.log(fields);
             //NOTE THAT THE FIRST ONE IN ARRAY IS USER NAME
             var query = ParseCheckbox(fields);
-            //reference: http://stackoverflow.com/questions/750486/javascript-closure-inside-loops-simple-practical-example
-            query.forEach(function(element){
-                var qry_str = "SELECT name from schedule WHERE date = '";
-                qry_str += element[0].getFullYear() + "-" + (element[0].getMonth() + 1) + "-" + element[0].getDate();
-                qry_str += "'";
-                qry_str += "AND time = ";
-                qry_str += element[1];
-                qry_str += " AND room = ";
-                qry_str += element[2];
-                sql.connection.query(qry_str, function(err, rows_chk, fields_func){
-                    //no record found
-                    if(rows_chk.length === 0)
+            query.sort(function(a, b){
+                if(a[0] > b[0]) return 1;
+                else if(a[0] === b[0])
+                {
+                    if(a[1] > b[1]) return 1;
+                    else if(a[1] === b[1])
                     {
-                        var sql_str_written = "INSERT INTO 'info'.'schedule'('date', 'time', 'room', 'name') VALUES('";
-                        sql_str_written += element[0].getFullYear() + "-" + (element[0].getMonth() + 1) + "-" + element[0].getDate();
-                        sql_str_written += "', '";
-                        sql_str_written += element[1];
-                        sql_str_written += "', '";
-                        sql_str_written += element[2];
-                        sql_str_written += "', '";
-                        sql_str_written += fields[0];
-                        sql_str_written += "')";
-                        console.log(element);
-                        console.log(sql_str_written);
+                        if(a[2] > b[2]) return 1;
+                        else return -1;
                     }
-                    //check if name is not the same as the one
-                    else if(rows_chk[0].name !== fields[0])
+                    else return -1;
+                }
+                else return -1;
+            });
+            var query_origin = "SELECT * from schedule WHERE date >= ";
+            query_origin += "'" + FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
+            query_origin += " AND name = '";
+            query_origin += fields[0] + "'";
+            query_origin += " ORDER BY date ASC, time ASC, room ASC";
+            //reference: http://stackoverflow.com/questions/750486/javascript-closure-inside-loops-simple-practical-example
+            sql.connection.query(query_origin, function(err, rows_origin, fields_origin){
+                if(err) throw err;
+                var rows_origin_parsed_date_only = [];
+                var chk_ptr = 0;
+                var rows_orgin_marker = [];
+                for(var ctr_marker = 0; ctr_marker < rows_origin.length; ++ctr_marker)
+                {
+                    rows_orgin_marker[ctr_marker] = false;
+                }
+                for(var ctr_origin = 0; ctr_origin < rows_origin.length; ++ctr_origin)
+                {
+                    rows_origin_parsed_date_only[ctr_origin] = ParseSqlDateCht(rows_origin[ctr_origin].date + "");
+                }
+                console.log(query);
+                query.forEach(function(element){
+                    /*  compare with data on sql    */
+                    while(
+                    chk_ptr < rows_origin.length &&
+                        (rows_origin_parsed_date_only[chk_ptr].getFullYear() < element[0].getFullYear() ||
+                        rows_origin_parsed_date_only[chk_ptr].getMonth() < element[0].getMonth() ||
+                        rows_origin_parsed_date_only[chk_ptr].getDate() < element[0].getDate() ||
+                        rows_origin[chk_ptr].time < element[1])
+                    )
                     {
+                        ++chk_ptr;
 
                     }
-                    //if the name is the recived one then do nothing
+                    //the record remain unchanged
+                    if(
+                        chk_ptr < rows_origin.length &&
+                        (rows_origin_parsed_date_only[chk_ptr].getFullYear() === element[0].getFullYear() &&
+                        rows_origin_parsed_date_only[chk_ptr].getMonth() === element[0].getMonth() &&
+                        rows_origin_parsed_date_only[chk_ptr].getDate() === element[0].getDate() &&
+                        rows_origin[chk_ptr].time === element[1] &&
+                        rows_origin[chk_ptr].room === element[2])
+                    )
+                    {
+                        rows_orgin_marker[chk_ptr] = true;
+                        ++chk_ptr;
+                        console.log(rows_orgin_marker);
+                        //reference: http://stackoverflow.com/questions/18452920/continue-in-cursor-foreach
+                        return;
+                    }
+
+                    var qry_str = "SELECT name from schedule WHERE date = '";
+                    qry_str += element[0].getFullYear() + "-" + (element[0].getMonth() + 1) + "-" + element[0].getDate();
+                    qry_str += "'";
+                    qry_str += "AND time = ";
+                    qry_str += element[1];
+                    qry_str += " AND room = ";
+                    qry_str += element[2];
+                    sql.connection.query(qry_str, function(err, rows_chk, fields_func){
+                        if(err) throw err;
+
+                        //no record found -> force write
+                        if(rows_chk.length === 0)
+                        {
+                            var sql_str_written = "INSERT INTO 'info'.'schedule'('date', 'time', 'room', 'name') VALUES('";
+                            sql_str_written += element[0].getFullYear() + "-" + (element[0].getMonth() + 1) + "-" + element[0].getDate();
+                            sql_str_written += "', '";
+                            sql_str_written += element[1];
+                            sql_str_written += "', '";
+                            sql_str_written += element[2];
+                            sql_str_written += "', '";
+                            sql_str_written += fields[0];
+                            sql_str_written += "')";
+                            console.log(sql_str_written);
+                        }
+                        //check if name is not the same as the one
+                        else if(rows_chk[0].name !== fields[0])
+                        {
+                            //ERROR: THIS SPACE IS RESERVED BY OTHERS
+                        }
+                        //if the name is the recived one then do nothing
+                    });
                 });
             });
         });
