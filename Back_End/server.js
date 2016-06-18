@@ -279,7 +279,6 @@ function start(){
         });
 
         form.on('end', function(){
-            console.log(fields);
             //NOTE THAT THE FIRST ONE IN ARRAY IS USER NAME
             var query = ParseCheckbox(fields);
             query.sort(function(a, b){
@@ -315,19 +314,14 @@ function start(){
                 {
                     rows_origin_parsed_date_only[ctr_origin] = ParseSqlDateCht(rows_origin[ctr_origin].date + "");
                 }
-                console.log(query);
                 query.forEach(function(element){
                     /*  compare with data on sql    */
                     while(
                     chk_ptr < rows_origin.length &&
-                        (rows_origin_parsed_date_only[chk_ptr].getFullYear() < element[0].getFullYear() ||
-                        rows_origin_parsed_date_only[chk_ptr].getMonth() < element[0].getMonth() ||
-                        rows_origin_parsed_date_only[chk_ptr].getDate() < element[0].getDate() ||
-                        rows_origin[chk_ptr].time < element[1])
+                        (rows_origin_parsed_date_only[chk_ptr] < element[0] || (rows_origin_parsed_date_only[chk_ptr] < element[0] && rows_origin[chk_ptr].time < element[1]))
                     )
                     {
                         ++chk_ptr;
-
                     }
                     //the record remain unchanged
                     if(
@@ -341,7 +335,6 @@ function start(){
                     {
                         rows_orgin_marker[chk_ptr] = true;
                         ++chk_ptr;
-                        console.log(rows_orgin_marker);
                         //reference: http://stackoverflow.com/questions/18452920/continue-in-cursor-foreach
                         return;
                     }
@@ -378,6 +371,15 @@ function start(){
                         //if the name is the recived one then do nothing
                     });
                 });
+
+                for(var ctr_clear = 0; ctr_clear < rows_origin.length; ++ctr_clear)
+                {
+                    if(rows_orgin_marker[ctr_clear]) continue;
+                    var query_del = "DELETE FROM 'info'.'schedule' WHERE 'id' = '";
+                    query_del += rows_origin[ctr_clear].id + "'";
+                    console.log(query_del);
+                }
+
             });
         });
 
