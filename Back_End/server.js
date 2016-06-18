@@ -52,19 +52,11 @@ function start(){
                     var now = new Date();
                     var FirstDayOfWeek = new Date();
                     var day_cht = "日一二三四五六日";
-                    var query = "SELECT * FROM schedule WHERE date >= ";
-                    var query_oth = "";
                     var days_this_mon = ((new Date(now.getFullYear(), now.getMonth() + 1, 1)) - (new Date(now.getFullYear(), now.getMonth(), 1)))/60/60/24/1000;	//how many days
                     FirstDayOfWeek.setDate(now.getDate() - now.getDay());
-                    query += "'" + FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
-                    query_oth = query;
-                    query += " AND name = '";
-                    query_oth += " AND name != '";
-                    query += user_id + "'";
-                    query_oth += user_id + "'";
-                    query += " ORDER BY date ASC, time ASC";
-                    query_oth += " ORDER BY time ASC, date ASC";
-                    sql.connection.query(query, function(err, rows, fields)
+                    var query_esc_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
+                    var query_esc_name = user_id;
+                    sql.connection.query("SELECT * FROM schedule WHERE date >= ? AND name = ? ORDER BY date ASC, time ASC", [query_esc_date, query_esc_name], function(err, rows, fields)
                     {
                         if(err) throw err;
                         var html = "";
@@ -124,9 +116,7 @@ function start(){
                         }
                         body += "<br>";
 
-                        sql.connection.query(query_oth, function(err, rows_oth, fields){
-
-
+                        sql.connection.query("SELECT * FROM schedule WHERE date >= ? AND name != ? ORDER BY time ASC, date ASC", [query_esc_date, query_esc_name], function(err, rows_oth, fields){
                             if(err) throw err;
                             /*  parsing other users */
                             //resort the array
@@ -295,13 +285,10 @@ function start(){
                 }
                 else return -1;
             });
-            var query_origin = "SELECT * from schedule WHERE date >= ";
-            query_origin += "'" + FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
-            query_origin += " AND name = '";
-            query_origin += fields[0] + "'";
-            query_origin += " ORDER BY date ASC, time ASC, room ASC";
+            var query_origin_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate();
+            var query_origin_name = fields[0];
             //reference: http://stackoverflow.com/questions/750486/javascript-closure-inside-loops-simple-practical-example
-            sql.connection.query(query_origin, function(err, rows_origin, fields_origin){
+            sql.connection.query("SELECT * from schedule WHERE date >= ? AND name = ? ORDER BY date ASC, time ASC, room ASC", [query_origin_date, query_origin_name], function(err, rows_origin, fields_origin){
                 if(err) throw err;
                 var rows_origin_parsed_date_only = [];
                 var chk_ptr = 0;
@@ -339,29 +326,25 @@ function start(){
                         return;
                     }
 
-                    var qry_str = "SELECT name from schedule WHERE date = '";
-                    qry_str += element[0].getFullYear() + "-" + (element[0].getMonth() + 1) + "-" + element[0].getDate();
-                    qry_str += "'";
-                    qry_str += "AND time = ";
-                    qry_str += element[1];
-                    qry_str += " AND room = ";
-                    qry_str += element[2];
-                    sql.connection.query(qry_str, function(err, rows_chk, fields_func){
+                    var qry_esc_date = element[0].getFullYear() + "-" + (element[0].getMonth() + 1) + "-" + element[0].getDate();
+                    var qry_esc_time = element[1];
+                    var qry_esc_room = element[2];
+                    sql.connection.query("SELECT `name` from `schedule` WHERE `date` = ? AND `time` = ? AND `room` = ?", [qry_esc_date, qry_esc_time, qry_esc_room],function(err, rows_chk, fields_func){
                         if(err) throw err;
 
                         //no record found -> force write
                         if(rows_chk.length === 0)
                         {
-                            var sql_str_written = "INSERT INTO 'info'.'schedule'('date', 'time', 'room', 'name') VALUES('";
-                            sql_str_written += element[0].getFullYear() + "-" + (element[0].getMonth() + 1) + "-" + element[0].getDate();
-                            sql_str_written += "', '";
-                            sql_str_written += element[1];
-                            sql_str_written += "', '";
-                            sql_str_written += element[2];
-                            sql_str_written += "', '";
-                            sql_str_written += fields[0];
-                            sql_str_written += "')";
-                            console.log(sql_str_written);
+                            var sql_str_wirtten_esacpe_obj = {
+                                date: element[0].getFullYear() + "-" + (element[0].getMonth() + 1) + "-" + element[0].getDate(),
+                                time: Number(element[1]),
+                                room: Number(element[2]),
+                                name: fields[0]
+                            };
+                            sql.connection.query("INSERT INTO `schedule` SET ?", sql_str_wirtten_esacpe_obj,function(err, rows_sql_str_written, fields_func){
+                                if(err) throw err;
+                                console.log(this.sql);
+                            });
                         }
                         //check if name is not the same as the one
                         else if(rows_chk[0].name !== fields[0])
@@ -375,9 +358,10 @@ function start(){
                 for(var ctr_clear = 0; ctr_clear < rows_origin.length; ++ctr_clear)
                 {
                     if(rows_orgin_marker[ctr_clear]) continue;
-                    var query_del = "DELETE FROM 'info'.'schedule' WHERE 'id' = '";
-                    query_del += rows_origin[ctr_clear].id + "'";
-                    console.log(query_del);
+                    sql.connection.query("DELETE FROM `schedule` WHERE `id` = ?", rows_origin[ctr_clear].id, function(err, rows_query_del, fields_func){
+                        if (err) throw err;
+                        console.log(this.sql);
+                    });
                 }
 
             });
