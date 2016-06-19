@@ -33,8 +33,7 @@ function start(){
             var user_name = fields['user_id'];
             var user_pass = fields['user_pass'];
             var user_id = fields['user_name'];
-            sql.connection.query("SELECT * FROM users", function (err, rows, fields)
-            {
+            sql.connection.query("SELECT * FROM users", function (err, rows, fields){
                 if(err) throw err;
                 for (var counter = 0; counter < rows.length; ++counter)
                 {
@@ -56,7 +55,7 @@ function start(){
                     FirstDayOfWeek.setDate(now.getDate() - now.getDay());
                     var query_esc_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
                     var query_esc_name = user_id;
-                    sql.connection.query("SELECT * FROM schedule WHERE date >= ? AND name = ? ORDER BY date ASC, time ASC", [query_esc_date, query_esc_name], function(err, rows, fields)
+                    sql.connection.query("SELECT * FROM schedule WHERE date >= ? AND name = ? ORDER BY date ASC, time ASC, room ASC", [query_esc_date, query_esc_name], function(err, rows, fields)
                     {
                         if(err) throw err;
                         var html = "";
@@ -115,7 +114,7 @@ function start(){
                             body += "</table>";
                         }
                         body += "<br>";
-                        sql.connection.query("SELECT * FROM schedule WHERE date >= ? AND name != ? ORDER BY time ASC, date ASC", [query_esc_date, query_esc_name], function(err, rows_oth, fields){
+                        sql.connection.query("SELECT * FROM schedule WHERE date >= ? AND name != ? ORDER BY time ASC, date ASC, room ASC", [query_esc_date, query_esc_name], function(err, rows_oth, fields){
                             if(err) throw err;
                             //resort the array
                             rows.sort(function(a, b){
@@ -267,7 +266,7 @@ function start(){
         var changes = {
             add: [],
             min: [],
-            err: []
+            error: []
         };
         var now = new Date();
         var FirstDayOfWeek = new Date();
@@ -349,16 +348,15 @@ function start(){
                     var qry_esc_room = element[2];
                     sql.connection.query("SELECT `name` from `schedule` WHERE `date` = ? AND `time` = ? AND `room` = ?", [qry_esc_date, qry_esc_time, qry_esc_room],function(err, rows_chk, fields_func){
                         if(err) throw err;
-
+                        var sql_str_wirtten_esacpe_obj = {
+                            date: element[0].getFullYear() + "-" + (element[0].getMonth() + 1) + "-" + element[0].getDate(),
+                            time: Number(element[1]),
+                            room: Number(element[2]),
+                            name: fields[0]
+                        };
                         //no record found -> force write
                         if(rows_chk.length === 0)
                         {
-                            var sql_str_wirtten_esacpe_obj = {
-                                date: element[0].getFullYear() + "-" + (element[0].getMonth() + 1) + "-" + element[0].getDate(),
-                                time: Number(element[1]),
-                                room: Number(element[2]),
-                                name: fields[0]
-                            };
                             sql.connection.query("INSERT INTO `schedule` SET ?", sql_str_wirtten_esacpe_obj,function(err, rows_sql_str_written, fields_func){
                                 if(err) throw err;
                                 console.log(this.sql);
@@ -369,41 +367,41 @@ function start(){
                                     changes = DeleteFromDb(rows_origin, rows_orgin_marker, rows_origin_parsed_date_only, changes, fields, res);
                                     console.log("Caller 2");
                                 }
-                        });
-                    }
-                    //check if name is not the same as the one
-                    else if(rows_chk[0].name !== fields[0])
-                    {
-                        //ERROR: THIS SPACE IS RESERVED BY OTHERS
-
-                        if(index === array.length - 1)
-                        {
-                            changes = DeleteFromDb(rows_origin, rows_orgin_marker, rows_origin_parsed_date_only, changes, fields, res);
-                            console.log("Caller 3");
+                            });
                         }
-                    }
-                    //if the name is the recived one then do nothing
-                    else
-                    {
-                        if(index === array.length - 1)
+                        //check if name is not the same as the one
+                        else if(rows_chk[0].name !== fields[0])
                         {
-                            changes = DeleteFromDb(rows_origin, rows_orgin_marker, rows_origin_parsed_date_only, changes, fields, res);
-                            console.log("Caller 4");
+                            //ERROR: THIS SPACE IS RESERVED BY OTHERS
+                            changes.error.push(sql_str_wirtten_esacpe_obj);
+                            console.log("INSERT INTO `schedule` SET date = " + (element[0].getFullYear() + "-" + (element[0].getMonth() + 1) + "-" + element[0].getDate()) + " date = " + element[1] + " room = " + element[2] + " Failed");
+                            if(index === array.length - 1)
+                            {
+                                changes = DeleteFromDb(rows_origin, rows_orgin_marker, rows_origin_parsed_date_only, changes, fields, res);
+                                console.log("Caller 3");
+                            }
                         }
-                    }
-
+                        //if the name is the recived one then do nothing
+                        else
+                        {
+                            if(index === array.length - 1)
+                            {
+                                changes = DeleteFromDb(rows_origin, rows_orgin_marker, rows_origin_parsed_date_only, changes, fields, res);
+                                console.log("Caller 4");
+                            }
+                        }
+                    });
                 });
+                if(query.length === 0)
+                {
+                    changes = DeleteFromDb(rows_origin, rows_orgin_marker, rows_origin_parsed_date_only, changes, fields, res);
+                    console.log("Caller 5");
+                }
             });
-            if(query.length === 0)
-            {
-                changes = DeleteFromDb(rows_origin, rows_orgin_marker, rows_origin_parsed_date_only, changes, fields, res);
-                console.log("Caller 5");
-            }
         });
-    });
 
-    form.parse(req);
-}
+        form.parse(req);
+    }
 
 server.listen(8888, function(){
     console.log('Server running at http://localhost:8888/');
@@ -565,7 +563,11 @@ function BuildHtmlResult(array_obj)
 
 
     /*  body    */
-    body += "此次變動<br>";
+    if(array_obj.add.length === 0 && array_obj.min.length === 0 && array_obj.error.length === 0)
+    {
+        body += "甚麼事情都沒有發生0.0";
+    }
+    else body += "此次變動<br>";
     //addition part
     console.log(array_obj);
     if(array_obj.add.length !== 0)
@@ -578,6 +580,11 @@ function BuildHtmlResult(array_obj)
     {
         body += "刪除的有:\n"
         body += draw(array_obj.min);
+    }
+    if(array_obj.error.length !== 0)
+    {
+        body += "錯誤的有(你動作太慢這格被別人搶走了QQ):\n"
+        body += draw(array_obj.err);
     }
     //TODO: ERROR PART
     return "<!DOCTYPE html>\n<html lang='zh-Hant'>" +  "<head>" + head + "</head>" + "<body>" + body + "</body>" + "<footer>" + footer + "</footer>" + "</html>";

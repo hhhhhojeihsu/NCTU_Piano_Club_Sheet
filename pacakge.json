@@ -1,0 +1,40 @@
+{
+  "name": "NCTU_Piano_Club_Sheet",
+  "version": "1.0.0",
+  "description": "NCTU_Piano_Club_Sheet",
+  "keywords": [
+    "OpenShift",
+    "Node.js",
+    "application",
+    "openshift"
+  ],
+  "author": {
+    "name": "hhhhojeihsu",
+    "email": "hhhhojeihsu@gmail.cin",
+    "url": "https://github.com/hhhhhojeihsu/NCTU_Piano_Club_Sheet"
+  },
+  "homepage": "https://github.com/hhhhhojeihsu/NCTU_Piano_Club_Sheet",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hhhhhojeihsu/NCTU_Piano_Club_Sheet"
+  },
+
+  "engines": {
+    "node": ">= 0.6.0",
+    "npm": ">= 1.0.0"
+  },
+
+  "dependencies": {
+    "express": "~3.4.4",
+    "body-parser": "",
+    "fs": "",
+    "formidable": "",
+    "util": "",
+    "mysql": ""
+  },
+  "devDependencies": {},
+  "bundleDependencies": [],
+
+  "private": true,
+  "main": "Back_End/index.js"
+}
