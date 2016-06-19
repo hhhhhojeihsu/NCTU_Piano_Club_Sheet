@@ -115,20 +115,24 @@ function start(){
                             body += "</table>";
                         }
                         body += "<br>";
-
                         sql.connection.query("SELECT * FROM schedule WHERE date >= ? AND name != ? ORDER BY time ASC, date ASC", [query_esc_date, query_esc_name], function(err, rows_oth, fields){
                             if(err) throw err;
-                            /*  parsing other users */
                             //resort the array
                             rows.sort(function(a, b){
                                 if(a.time > b.time) return 1;
                                 else if(a.time === b.time)
                                 {
-                                    if(a.date > b.time) return 1;
+                                    if(a.date > b.date) return 1;
+                                    else if(a.date === b.date)
+                                    {
+                                        if(a.room > b.room) return 1;
+                                        else return -1;
+                                    }
                                     else return -1;
                                 }
                                 else return -1;
                             });
+                            /*  parsing other users */
                             for(var ctr_self_sort = 0; ctr_self_sort < rows.length; ++ctr_self_sort)
                             {
                                 record[ctr_self_sort] = ParseSqlDateCht(rows[ctr_self_sort].date + "");
@@ -257,8 +261,14 @@ function start(){
         form.parse(req);
     }
 
+    //TODO: Database Primary Key Overflow
     function UserQuery(req, res)
     {
+        var changes = {
+            add: [],
+            min: [],
+            err: []
+        };
         var now = new Date();
         var FirstDayOfWeek = new Date();
         FirstDayOfWeek.setDate(now.getDate() - now.getDay());
@@ -301,13 +311,16 @@ function start(){
                 {
                     rows_origin_parsed_date_only[ctr_origin] = ParseSqlDateCht(rows_origin[ctr_origin].date + "");
                 }
-                query.forEach(function(element){
+
+                query.forEach(function(element, index, array){
                     /*  compare with data on sql    */
+                    //refrence: http://stackoverflow.com/questions/7244513/javascript-date-comparisons-dont-equal
                     while(
                     chk_ptr < rows_origin.length &&
-                        (rows_origin_parsed_date_only[chk_ptr] < element[0] || (rows_origin_parsed_date_only[chk_ptr] < element[0] && rows_origin[chk_ptr].time < element[1]))
+                        (rows_origin_parsed_date_only[chk_ptr] < element[0] || (rows_origin_parsed_date_only[chk_ptr].getTime() === element[0].getTime() && rows_origin[chk_ptr].time < element[1]) || (rows_origin_parsed_date_only[chk_ptr].getTime() === element[0].getTime() && rows_origin[chk_ptr].time === element[1] && rows_origin[chk_ptr].room < element[2]))
                     )
                     {
+                        console.log(rows_origin_parsed_date_only[chk_ptr]);
                         ++chk_ptr;
                     }
                     //the record remain unchanged
@@ -323,7 +336,12 @@ function start(){
                         rows_orgin_marker[chk_ptr] = true;
                         ++chk_ptr;
                         //reference: http://stackoverflow.com/questions/18452920/continue-in-cursor-foreach
-                        return;
+                        if(index === array.length - 1)
+                        {
+                            changes = DeleteFromDb(rows_origin, rows_orgin_marker, rows_origin_parsed_date_only, changes, fields, res);
+                            console.log("Caller 1");
+                        }
+                        return true;
                     }
 
                     var qry_esc_date = element[0].getFullYear() + "-" + (element[0].getMonth() + 1) + "-" + element[0].getDate();
@@ -344,38 +362,81 @@ function start(){
                             sql.connection.query("INSERT INTO `schedule` SET ?", sql_str_wirtten_esacpe_obj,function(err, rows_sql_str_written, fields_func){
                                 if(err) throw err;
                                 console.log(this.sql);
-                            });
-                        }
-                        //check if name is not the same as the one
-                        else if(rows_chk[0].name !== fields[0])
+                                changes.add.push(sql_str_wirtten_esacpe_obj);
+                                //refrence: http://stackoverflow.com/questions/29738535/catch-foreach-last-iteration
+                                if(index === array.length - 1)
+                                {
+                                    changes = DeleteFromDb(rows_origin, rows_orgin_marker, rows_origin_parsed_date_only, changes, fields, res);
+                                    console.log("Caller 2");
+                                }
+                        });
+                    }
+                    //check if name is not the same as the one
+                    else if(rows_chk[0].name !== fields[0])
+                    {
+                        //ERROR: THIS SPACE IS RESERVED BY OTHERS
+
+                        if(index === array.length - 1)
                         {
-                            //ERROR: THIS SPACE IS RESERVED BY OTHERS
+                            changes = DeleteFromDb(rows_origin, rows_orgin_marker, rows_origin_parsed_date_only, changes, fields, res);
+                            console.log("Caller 3");
                         }
-                        //if the name is the recived one then do nothing
-                    });
+                    }
+                    //if the name is the recived one then do nothing
+                    else
+                    {
+                        if(index === array.length - 1)
+                        {
+                            changes = DeleteFromDb(rows_origin, rows_orgin_marker, rows_origin_parsed_date_only, changes, fields, res);
+                            console.log("Caller 4");
+                        }
+                    }
+
                 });
-
-                for(var ctr_clear = 0; ctr_clear < rows_origin.length; ++ctr_clear)
-                {
-                    if(rows_orgin_marker[ctr_clear]) continue;
-                    sql.connection.query("DELETE FROM `schedule` WHERE `id` = ?", rows_origin[ctr_clear].id, function(err, rows_query_del, fields_func){
-                        if (err) throw err;
-                        console.log(this.sql);
-                    });
-                }
-
             });
+            if(query.length === 0)
+            {
+                changes = DeleteFromDb(rows_origin, rows_orgin_marker, rows_origin_parsed_date_only, changes, fields, res);
+                console.log("Caller 5");
+            }
         });
-
-        form.parse(req);
-    }
-
-
-    server.listen(8888, function(){
-        console.log('Server running at http://localhost:8888/');
     });
+
+    form.parse(req);
 }
 
+server.listen(8888, function(){
+    console.log('Server running at http://localhost:8888/');
+});
+}
+
+//DeleteFromDb is the last asynchrnous function called before respond
+//Due to the asynchrnous problem
+function DeleteFromDb(rows_origin, rows_orgin_marker, rows_origin_parsed_date_only, changes, fields, res)
+{
+    for(var ctr_clear = 0; ; ++ctr_clear)
+    {
+        if(ctr_clear === rows_origin.length)
+        {
+            res.writeHead(200, {
+                'Content-Type': 'text/html'
+            });
+            res.end(BuildHtmlResult(changes));
+            return changes;
+        }
+        if(rows_orgin_marker[ctr_clear]) continue;
+        changes.min.push({
+            date: rows_origin_parsed_date_only[ctr_clear].getFullYear() + "-" + (rows_origin_parsed_date_only[ctr_clear].getMonth() + 1) + "-" + rows_origin_parsed_date_only[ctr_clear].getDate(),
+            time: rows_origin[ctr_clear].time,
+            room: rows_origin[ctr_clear].room,
+            name: fields[0]
+        });
+        sql.connection.query("DELETE FROM `schedule` WHERE `id` = ?", rows_origin[ctr_clear].id, function(err, rows_query_del, fields_func){
+            if (err) throw err;
+            console.log(this.sql);
+        });
+    }
+}
 
 
 
@@ -411,6 +472,7 @@ function ParseSqlDateCht(input)
     date_obj.setDate(Number(input.substring(8, 10)));
     /*  get year    */
     date_obj.setFullYear(Number(input.substring(11, 15)));
+    date_obj.setHours(0, 0, 0, 0);  //set the time to, to make date object comparison accurate
     return date_obj;
 }
 
@@ -435,9 +497,9 @@ function ParseCheckbox(input)
         var temp = [];
         var now = new Date();
         var FirstDayOfWeek = new Date();
-        var days_this_mon = ((new Date(now.getFullYear(), now.getMonth() + 1, 1)) - (new Date(now.getFullYear(), now.getMonth(), 1)))/60/60/24/1000;	//how many days
         FirstDayOfWeek.setDate(now.getDate() - now.getDay());
         var date_temp = FirstDayOfWeek;
+        date_temp.setHours(0, 0, 0, 0);
         var time_temp = 0;
         var room_temp = 0;
         var string = input[ctr_all] + "";
@@ -455,6 +517,70 @@ function ParseCheckbox(input)
         res[ctr_all - 1] = temp;
     }
     return res;
+}
+
+function BuildHtmlResult(array_obj)
+{
+    var head = "";
+    var body = "";
+    var footer = "";
+
+
+    function draw(sub_arr)
+    {
+        var string_draw  = "";
+        string_draw += "<table>";
+        string_draw += "<tr><td>日期</td><td>時間</td><td>琴房</td></tr>";
+        for(var ctr = 0; ctr < sub_arr.length; ++ctr)
+        {
+            var l_pos = 0;
+            string_draw += "<tr>";
+            string_draw += "<td>";
+            string_draw += sub_arr[ctr].date.substring(l_pos = sub_arr[ctr].date.indexOf("-", 0) + 1, l_pos = sub_arr[ctr].date.indexOf("-", l_pos));
+            string_draw += "/";
+            string_draw += sub_arr[ctr].date.substring(l_pos = sub_arr[ctr].date.indexOf("-", l_pos) + 1, sub_arr[ctr].date.length);
+            string_draw += "</td>";
+            string_draw += "<td>";
+            if(sub_arr[ctr].time < 10) string_draw += "0";
+            string_draw += sub_arr[ctr].time;
+            string_draw += ":00 ~ ";
+            if(sub_arr[ctr].time + 1 < 10) string_draw += "0";
+            if(sub_arr[ctr].time + 1 == 24) string_draw += "00";
+            else string_draw += (sub_arr[ctr].time + 1);
+            string_draw += ":00";
+            string_draw += "</td>";
+            string_draw += "<td>";
+            if(!sub_arr[ctr].room) string_draw += "409";
+            else string_draw += "417";
+            string_draw += "</td>";
+            string_draw += "</tr>";
+        }
+        string_draw += "</table>";
+        return string_draw;
+    }
+
+    /*  head    */
+    head += "<meta charset='UTF-8'>";
+    head += "<title>交通大學鋼琴社琴房預約系統</title>";
+
+
+    /*  body    */
+    body += "此次變動<br>";
+    //addition part
+    console.log(array_obj);
+    if(array_obj.add.length !== 0)
+    {
+        body += "新增的有:\n";
+        body += draw(array_obj.add);
+    }
+    //deletion part
+    if(array_obj.min.length !== 0)
+    {
+        body += "刪除的有:\n"
+        body += draw(array_obj.min);
+    }
+    //TODO: ERROR PART
+    return "<!DOCTYPE html>\n<html lang='zh-Hant'>" +  "<head>" + head + "</head>" + "<body>" + body + "</body>" + "<footer>" + footer + "</footer>" + "</html>";
 }
 
 exports.start = start;
