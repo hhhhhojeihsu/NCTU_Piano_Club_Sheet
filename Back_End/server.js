@@ -207,7 +207,7 @@ function start(){
                         var ctr_selected = 0;   //pointer to current user name's record on database
                         var ctr_oth_not_selected = 0;   //pointer to other user's appointment on database
                         header += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
-                        header += "<script type='text/javascript' src='https://raw.githubusercontent.com/hhhhhojeihsu/NCTU_Piano_Club_Sheet/gh-pages/Front_End/form_valid.js'></script>";
+                        header += "<script type='text/javascript' src='https://rawgit.com/hhhhhojeihsu/NCTU_Piano_Club_Sheet/gh-pages/Front_End/form_valid.js'></script>";
                         /*  body    */
                         body += "您欲輸入的名字是'"+ user_id + "' ";
                         /*  no record found  */
@@ -403,7 +403,8 @@ function start(){
                 else
                 {
                     console.log("Attempt failed with User: " + user_name + " Pass: " + user_pass + " detected");
-                    res.redirect('https://raw.githubusercontent.com/hhhhhojeihsu/NCTU_Piano_Club_Sheet/gh-pages/Front_End/Fail.html');
+                    //reference: http://stackoverflow.com/questions/17341122/link-and-execute-external-javascript-file-hosted-on-github
+                    res.redirect('https://rawgit.com/hhhhhojeihsu/NCTU_Piano_Club_Sheet/gh-pages/Front_End/Fail.html');
                     res.end();
                 }
             });
