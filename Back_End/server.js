@@ -207,7 +207,7 @@ function start(){
                         var ctr_selected = 0;   //pointer to current user name's record on database
                         var ctr_oth_not_selected = 0;   //pointer to other user's appointment on database
                         header += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
-                        header += "<script type='text/javascript' src='http://localhost:63342/NCTU_Piano_Club_Sheet/Front_End/form_valid.js'></script>";
+                        header += "<script type='text/javascript' src='https://raw.githubusercontent.com/hhhhhojeihsu/NCTU_Piano_Club_Sheet/gh-pages/Front_End/form_valid.js'></script>";
                         /*  body    */
                         body += "您欲輸入的名字是'"+ user_id + "' ";
                         /*  no record found  */
@@ -403,7 +403,7 @@ function start(){
                 else
                 {
                     console.log("Attempt failed with User: " + user_name + " Pass: " + user_pass + " detected");
-                    res.redirect('http://localhost:63342/NCTU_Piano_Club_Sheet/Front_End/Fail.html');
+                    res.redirect('https://raw.githubusercontent.com/hhhhhojeihsu/NCTU_Piano_Club_Sheet/gh-pages/Front_End/Fail.html');
                     res.end();
                 }
             });
@@ -847,9 +847,9 @@ function BuildAdminResult()
     var body = "";
     var footer = "";
     head += "<meta charset='UTF-8'>";
-    head += "<meta http-equiv='refresh' content='3;url=http://localhost:63342/NCTU_Piano_Club_Sheet/Front_End/Start.html'>";
+    head += "<meta http-equiv='refresh' content='3;url=http://hhhhhojeihsu.github.io/NCTU_Piano_Club_Sheet/'>";
     body += "所有變動都已儲存，網頁將在3秒鐘後自動導向至首頁。";
-    body += "如果甚麼事都沒發生請點<a href='http://localhost:63342/NCTU_Piano_Club_Sheet/Front_End/Start.html'>這裡</a>";
+    body += "如果甚麼事都沒發生請點<a href='http://hhhhhojeihsu.github.io/NCTU_Piano_Club_Sheet/'>這裡</a>";
     return "<!DOCTYPE html>\n<html lang='zh-Hant'>" +  "<head>" + head + "</head>" + "<body>" + body + "</body>" + "<footer>" + footer + "</footer>" + "</html>";
 }
 
@@ -926,7 +926,7 @@ function BuildHtmlResult(array_obj)
         body += "錯誤的有(你動作太慢這格被別人搶走了QQ):\n"
         body += draw(array_obj.err);
     }
-    body += "按這裡返回首頁<a href='http://localhost:63342/NCTU_Piano_Club_Sheet/Front_End/Start.html'>這裡</a>";
+    body += "按這裡返回首頁<a href='http://hhhhhojeihsu.github.io/NCTU_Piano_Club_Sheet/'>這裡</a>";
     //TODO: ERROR PART
     return "<!DOCTYPE html>\n<html lang='zh-Hant'>" +  "<head>" + head + "</head>" + "<body>" + body + "</body>" + "<footer>" + footer + "</footer>" + "</html>";
 }
