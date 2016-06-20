@@ -16,6 +16,10 @@ function start(){
     server.post('/process_user', function(req, res){
         UserQuery(req, res);
     });
+    server.post('/process_admin', function(req, res){
+        AdminQuery(req, res);
+    });
+
 
     function UserPageProcess(req, res){
         //Store the data from the fields in your data store.
@@ -45,8 +49,120 @@ function start(){
                 }
                 /*  admin mode  */
                 //TODO: implmentation of admin mode
+                if(counter === 1)
+                {
+                    var now = new Date();
+                    var FirstDayOfWeek = new Date();
+                    var day_cht = "日一二三四五六日";
+                    var days_this_mon = ((new Date(now.getFullYear(), now.getMonth() + 1, 1)) - (new Date(now.getFullYear(), now.getMonth(), 1)))/60/60/24/1000;	//how many days
+                    FirstDayOfWeek.setDate(now.getDate() - now.getDay());
+                    var query_esc_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
+                    sql.connection.query("SELECT * FROM schedule WHERE date >= ? ORDER BY time ASC, date ASC, room ASC", [query_esc_date], function(err, rows, fields){
+                        if(err) throw err;
+                        var html = "";
+                        var header = '';
+                        var body = '';
+                        var record = [];
+                        var arr_pos = 0;
+                        header += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
+                        body += "你現在在Administrator模式，可以任意更改與觀看本周所有的資料。'除非必要不然不應任意更改'";
+                        for(var ctr_parse = 0; ctr_parse < rows.length; ++ctr_parse)
+                        {
+                            record[ctr_parse] = ParseSqlDateCht(rows[ctr_parse].date + "");
+                        }
+                        body += "<table>";
+                        body += "<form action='http://localhost:8888/process_admin' method='POST' enctype='multipart/form-data' name='admin_form' id='admin_form'>";
+                        body += "<tr><td colspan='8'>每週最多八個時段 每天最多三個時段</td></tr>";
+                        body += "<tr>";
+                        body += "<td></td>";
+                        for(var ctr_day = 0; ctr_day < 7; ++ctr_day)
+                        {
+                            body += "<td colspan='2'>";
+                            if (FirstDayOfWeek.getDate() + ctr_day > days_this_mon)
+                            {
+                                body += now.getMonth() + 1;
+                                body += "/";
+                                body += (FirstDayOfWeek.getDate() + ctr_day) - days_this_mon;
+                            }
+                            else
+                            {
+                                body += now.getMonth() + 1;
+                                body += "/";
+                                body += FirstDayOfWeek.getDate() + ctr_day;
+                            }
+                            body += " (";
+                            body += day_cht.substring(ctr_day, ctr_day + 1);
+                            body += ")";
+                            body += "</td>";
+                        }
+                        body += "</tr>";
+
+
+                        body += "<tr>";
+                        body += "<td></td>";
+                        for(var ctr_room = 0; ctr_room < 7; ++ctr_room)
+                        {
+                            body += "<td>";
+                            body += "409";
+                            body += "</td>";
+                            body += "<td>";
+                            body += "417";
+                            body += "</td>";
+                        }
+                        body += "</tr>";
+                        for(var ctr_hr = 0; ctr_hr <= 23; ++ctr_hr)
+                        {
+                            body += "<tr>";
+                            body += "<td>";
+                            if(ctr_hr < 10) body += "0";
+                            body += ctr_hr;
+                            body += ":00 ~ ";
+                            if(ctr_hr + 1 < 10) body += "0";
+                            if(ctr_hr + 1 == 24) body += "00";
+                            else body += (ctr_hr + 1);
+                            body += ":00";
+                            body += "</td>";
+                            for(var ctr_day = 0; ctr_day < 14; ++ctr_day)
+                            {
+                                //TODO: CROSS MONTH BUG
+                                body += "<td>";
+                                body += "<input type='text' size='5' name='";
+                                body += "c";
+                                body += Math.floor(ctr_day / 2);
+                                body += "_";
+                                body += ctr_hr;
+                                body += "_";
+                                body += ctr_day % 2;
+                                body += "' value='";
+                                //value
+                                if(arr_pos < rows.length && rows[arr_pos].time === ctr_hr && record[arr_pos].getDate() === (FirstDayOfWeek.getDate() + Math.floor(ctr_day / 2)) && (ctr_day % 2) === rows[arr_pos].room)
+                                {
+                                    body += rows[arr_pos].name;
+                                    ++arr_pos;
+                                }
+                                body += "'";
+                                body += ">";
+                                body += "</td>";
+                            }
+                            body += "</tr>";
+                        }
+                        body += "<tr><td><input type='submit' value='送出'></td>";
+
+                        body += "</form>";
+                        body += "</table>";
+
+
+                        html = '<!DOCTYPE html><html lang="zh-Hant">' + '<html><header>' + header + '</header><body>' + body + '</body></html>';
+                        /*  print out the page  */
+                        res.writeHead(200, {
+                            'Content-Type': 'text/html'
+                        });
+                        res.end(html);
+                    });
+
+                }
                 /*  user mode   */
-                if(counter === 2)
+                else if(counter === 2)
                 {
                     var now = new Date();
                     var FirstDayOfWeek = new Date();
@@ -279,7 +395,7 @@ function start(){
 
         form.on('end', function(){
             //NOTE THAT THE FIRST ONE IN ARRAY IS USER NAME
-            var query = ParseCheckbox(fields);
+            var query = ParseCheckbox_AdminForm(fields, 1);
             query.sort(function(a, b){
                 if(a[0] > b[0]) return 1;
                 else if(a[0] === b[0])
@@ -403,6 +519,27 @@ function start(){
         form.parse(req);
     }
 
+    function AdminQuery(req, res)
+    {
+        var form = new formidable.IncomingForm();
+        form.encoding = 'utf-8';
+        var fields = [];
+        form.on('field', function(name, value) {
+            if(value != "") fields.push([name, value]);
+        });
+
+        form.on('end', function(){
+            var fields_parse_date = [];
+            for(var ctr_fields_cp = 0; ctr_fields_cp < fields.length; ++ctr_fields_cp)
+            {
+                fields_parse_date[ctr_fields_cp] = fields[ctr_fields_cp][0];
+            }
+            fields_parse_date = ParseCheckbox_AdminForm(fields_parse_date, 0);
+        });
+
+        form.parse(req);
+    }
+
 server.listen(8888, function(){
     console.log('Server running at http://localhost:8888/');
 });
@@ -485,12 +622,14 @@ Number.prototype.pad = function(size)
 
 /*  parsing checkbox content    */
 //input is an array with field
-function ParseCheckbox(input)
+function ParseCheckbox_AdminForm(input, mode)
 {
-
-    var res = [];
+    var start_pt;
+    if(mode === 1) start_pt = 1;
+    else start_pt = 0;
+    var respond = [];
     //NOTE THAT THE FIRST ONE IN 'input' ARRAY IS USER NAME
-    for(var ctr_all = 1; ctr_all < input.length; ++ctr_all)
+    for(var ctr_all = start_pt; ctr_all < input.length; ++ctr_all)
     {
         var temp = [];
         var now = new Date();
@@ -512,9 +651,9 @@ function ParseCheckbox(input)
         temp[0] = date_temp;
         temp[1] = time_temp;
         temp[2] = room_temp;
-        res[ctr_all - 1] = temp;
+        respond[ctr_all - start_pt] = temp;
     }
-    return res;
+    return respond;
 }
 
 function BuildHtmlResult(array_obj)
