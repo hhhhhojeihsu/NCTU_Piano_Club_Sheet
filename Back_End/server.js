@@ -83,7 +83,7 @@ function start(){
                         }
                         /*  generating table    */
                         body += "<table>";
-                        body += "<form action='http://localhost:8888/process_admin' method='POST' enctype='multipart/form-data' name='admin_form' id='admin_form'>";    //data is sent to process_admin
+                        body += "<form action='http://140.113.92.122:8888/process_admin' method='POST' enctype='multipart/form-data' name='admin_form' id='admin_form'>";    //data is sent to process_admin
                         body += "<tr><td colspan='8'>每週最多八個時段 每天最多三個時段</td></tr>";
                         body += "<tr>";
                         body += "<td></td>";
@@ -288,7 +288,7 @@ function start(){
                             }
                             /*  point to the selectable form for user   */
                             body += "<table>";
-                            body += "<form action='http://localhost:8888/process_user' onsubmit='return validateForm()' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";  //collected data is sent to process_user
+                            body += "<form action='http://140.113.92.122:8888/process_user' onsubmit='return validateForm()' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";  //collected data is sent to process_user
                             //create a hidden input box that stored user name passed from the main page
                             body += "<input style='display: none;' type='text' id='hid_user' name='hid_user' value='";
                             body += user_id;
@@ -713,7 +713,7 @@ function start(){
 
 //listening on port 8888
 server.listen(8888, function(){
-    console.log('Server running at http://localhost:8888/');
+    console.log('Server running at http://140.113.92.122:8888/');
 });
 }
 
