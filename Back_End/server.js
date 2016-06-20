@@ -48,7 +48,6 @@ function start(){
                     }
                 }
                 /*  admin mode  */
-                //TODO: implmentation of admin mode
                 if(counter === 1)
                 {
                     var now = new Date();
@@ -521,6 +520,7 @@ function start(){
 
     function AdminQuery(req, res)
     {
+        //TODO: FORM COLLISION
         var form = new formidable.IncomingForm();
         form.encoding = 'utf-8';
         var fields = [];
@@ -530,11 +530,111 @@ function start(){
 
         form.on('end', function(){
             var fields_parse_date = [];
+            var marker_new = [];
+            var marker_update = []; //base on marker_new, used to see which field need update instead of insert or delete
+            var now = new Date();
+            var FirstDayOfWeek = new Date();
+            FirstDayOfWeek.setDate(now.getDate() - now.getDay());
+            var query_esc_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
             for(var ctr_fields_cp = 0; ctr_fields_cp < fields.length; ++ctr_fields_cp)
             {
                 fields_parse_date[ctr_fields_cp] = fields[ctr_fields_cp][0];
             }
             fields_parse_date = ParseCheckbox_AdminForm(fields_parse_date, 0);
+            for(var ctr_fields_cp = 0; ctr_fields_cp < fields.length; ++ctr_fields_cp)
+            {
+                fields_parse_date[ctr_fields_cp][3] = fields[ctr_fields_cp][1];
+            }
+            //sort
+            fields_parse_date.sort(function(a, b){
+                if(a[0] > b[0]) return 1;
+                else if(a[0] === b[0])
+                {
+                    if(a[1] > b[1]) return 1;
+                    else if(a[1] === b[1])
+                    {
+                        if(a[2] > b[2]) return 1;
+                        else return -1;
+                    }
+                    else return -1;
+                }
+                else return -1;
+            });
+            //initialize marker
+            for(var ctr_ini = 0; ctr_ini < fields_parse_date.length; ++ctr_ini)
+            {
+                marker_new[ctr_ini] = false;
+                marker_update[ctr_ini] = -1;
+            }
+            sql.connection.query("SELECT * FROM schedule WHERE date >= ? ORDER BY date ASC, time ASC, room ASC", [query_esc_date], function(err, rows, fields) {
+                var record = [];
+                var marker_old = [];
+                var old_ptr = 0;
+                var new_ptr = 0;
+                for (var ctr_parse = 0; ctr_parse < rows.length; ++ctr_parse)
+                {
+                    record[ctr_parse] = ParseSqlDateCht(rows[ctr_parse].date + "");
+                    marker_old[ctr_parse] = true;
+                }
+                //  check addition first
+                while (old_ptr < rows.length && new_ptr < fields_parse_date.length)
+                {
+                    if((record[old_ptr] < fields_parse_date[new_ptr][0]) || (record[old_ptr].getTime() === fields_parse_date[new_ptr][0].getTime() && rows[old_ptr].time < fields_parse_date[new_ptr][1]) || (record[old_ptr].getTime() === fields_parse_date[new_ptr][0].getTime() && rows[old_ptr].time === fields_parse_date[new_ptr][1] && rows[old_ptr].room < fields_parse_date[new_ptr][2]))
+                    {
+                        ++old_ptr;
+                        continue;
+                    }
+                    if(record[old_ptr].getTime() === fields_parse_date[new_ptr][0].getTime() && rows[old_ptr].time === fields_parse_date[new_ptr][1] && rows[old_ptr].room === fields_parse_date[new_ptr][2])
+                    {
+                        if(rows[old_ptr].name !== fields_parse_date[new_ptr][3]) marker_update[new_ptr] = rows[old_ptr].id;
+                        marker_new[new_ptr] = true;
+                        marker_old[old_ptr] = false;
+                        ++old_ptr;
+                        ++new_ptr;
+                        continue;
+                    }
+                    else
+                    {
+                        ++new_ptr;
+                        continue;
+                    }
+                }
+
+                //deletion
+                marker_old.forEach(function(element, index, array){
+                    if(!element) return true;
+                    sql.connection.query("DELETE FROM `schedule` WHERE `id` = ?", rows[index].id, function(err, rows_query_del, fields_func){
+                        if (err) throw err;
+                        console.log(this.sql);
+                    });
+                });
+                //addition
+                marker_new.forEach(function(element, index, array){
+                    if(element) return true;
+                    var sql_str_wirtten_esacpe_obj = {
+                        date: fields_parse_date[index][0].getFullYear() + "-" + (fields_parse_date[index][0].getMonth() + 1) + "-" + fields_parse_date[index][0].getDate(),
+                        time: Number(fields_parse_date[index][1]),
+                        room: Number(fields_parse_date[index][2]),
+                        name: fields_parse_date[index][3]
+                    };
+                    sql.connection.query("INSERT INTO `schedule` SET ?", sql_str_wirtten_esacpe_obj, function(err, rows_sql_str_written, fields_func){
+                        console.log(this.sql);
+                    });
+                });
+                //update
+                marker_update.forEach(function(element, index, array){
+                    if(element === -1) return true;
+                    var sql_str_wirtten_esacpe_arr = [fields_parse_date[index][0].getFullYear() + "-" + (fields_parse_date[index][0].getMonth() + 1) + "-" + fields_parse_date[index][0].getDate(), Number(fields_parse_date[index][1]), Number(fields_parse_date[index][2]), fields_parse_date[index][3], element];
+                    sql.connection.query("UPDATE `schedule` SET `date` = ?, `time` = ?,`room` = ?, `name` = ? WHERE `id` = ?", sql_str_wirtten_esacpe_arr, function(err, rows_sql_updated, fields_func){
+                        console.log(this.sql);
+                    });
+                });
+                res.writeHead(200, {
+                    'Content-Type': 'text/html'
+                });
+                res.end(BuildAdminResult());
+            });
+
         });
 
         form.parse(req);
@@ -656,6 +756,19 @@ function ParseCheckbox_AdminForm(input, mode)
     return respond;
 }
 
+function BuildAdminResult()
+{
+    var head = "";
+    var body = "";
+    var footer = "";
+    head += "<meta charset='UTF-8'>";
+    head += "<meta http-equiv='refresh' content='3;url=http://localhost:63342/NCTU_Piano_Club_Sheet/Front_End/Start.html'>";
+    body += "所有變動都已儲存，網頁將在3秒鐘後自動導向至首頁。";
+    body += "如果甚麼事都沒發生請點<a href='http://localhost:63342/NCTU_Piano_Club_Sheet/Front_End/Start.html'>這裡</a>";
+    return "<!DOCTYPE html>\n<html lang='zh-Hant'>" +  "<head>" + head + "</head>" + "<body>" + body + "</body>" + "<footer>" + footer + "</footer>" + "</html>";
+}
+
+
 function BuildHtmlResult(array_obj)
 {
     var head = "";
@@ -725,6 +838,7 @@ function BuildHtmlResult(array_obj)
         body += "錯誤的有(你動作太慢這格被別人搶走了QQ):\n"
         body += draw(array_obj.err);
     }
+    body += "按這裡返回首頁<a href='http://localhost:63342/NCTU_Piano_Club_Sheet/Front_End/Start.html'>這裡</a>";
     //TODO: ERROR PART
     return "<!DOCTYPE html>\n<html lang='zh-Hant'>" +  "<head>" + head + "</head>" + "<body>" + body + "</body>" + "<footer>" + footer + "</footer>" + "</html>";
 }
