@@ -1,0 +1,43 @@
+*
+{
+    font-family: Arial, sans-serif;
+}
+
+
+
+table, td
+{
+    text-align: center;
+}
+
+/*  refrence:http://stackoverflow.com/questions/19928594/how-to-exclude-last-child-in-css-psuedo-class-selector
+
+*/
+#select_menu tr:nth-child(2n + 4):not(:last-child)
+{
+    background-color: aquamarine;
+}
+
+#booked tr:nth-child(2n+ 1)
+{
+    background-color: aquamarine;
+}
+
+td, th
+{
+    border: 1px solid #000000;
+}
+
+#select_menu tr:last-child td
+{
+    border: 0;
+}
+
+table
+{
+    border: 1px solid #000000;
+    background-color:rgba(255, 230, 247, 1);
+    margin-bottom: 10px;
+    margin-top: 10px;
+    border-collapse: collapse;
+}
