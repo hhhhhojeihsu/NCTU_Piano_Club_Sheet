@@ -82,9 +82,11 @@ function start(){
                             if(err) throw err;
                             /*  variable used for generating html  */
                             var html = "";
-                            var header = '';
+                            var head = '';
                             var body = '';
-                            header += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
+                            head += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
+                            head += "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css' integrity='sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7' crossorigin='anonymous'>";
+                            head += "<link rel='stylesheet' type='text/css' href='http://localhost:8000/Style_user.css'>";
                             body += "你現在在Administrator模式，可以任意更改與觀看本周所有的資料。'除非必要不然不應任意更改'";
                             var record = [];    //used to save data for date fetching from sql server
                             var arr_pos = 0;    //pointer point to which field to be print
@@ -94,15 +96,16 @@ function start(){
                                 record[ctr_parse] = ParseSqlDateCht(rows[ctr_parse].date + "");
                             }
                             /*  generating table    */
-                            body += "<table>";
+                            body += "<table class='table1'>";
                             body += "<form action='http://localhost:8888/process_admin' method='POST' enctype='multipart/form-data' name='admin_form' id='admin_form'>";    //data is sent to process_admin
-                            body += "<tr><td colspan='8'>每週最多八個時段 每天最多三個時段</td></tr>";
+                            body += "<thead>";
+                            body += "<tr><td colspan='15'>每週最多八個時段 每天最多三個時段</td></tr>";
                             body += "<tr>";
                             body += "<td></td>";
                             /*  7 days in total */
                             for(var ctr_day = 0; ctr_day < 7; ++ctr_day)
                             {
-                                body += "<td colspan='2'>";
+                                body += "<th colspan='2'>";
                                 //prevent cross month problem
                                 if (FirstDayOfWeek.getDate() + ctr_day > days_this_mon)
                                 {
@@ -120,7 +123,7 @@ function start(){
                                 body += " (";
                                 body += day_cht.substring(ctr_day, ctr_day + 1);
                                 body += ")";
-                                body += "</td>";
+                                body += "</th>";
                             }
                             body += "</tr>";
 
@@ -129,15 +132,19 @@ function start(){
                             body += "<td></td>";
                             for(var ctr_room = 0; ctr_room < 7; ++ctr_room)
                             {
-                                body += "<td>";
+                                body += "<th>";
                                 body += "409";
-                                body += "</td>";
-                                body += "<td>";
+                                body += "</th>";
+                                body += "<th>";
                                 body += "417";
-                                body += "</td>";
+                                body += "</th>";
                             }
                             body += "</tr>";
-
+                            body += "</thead>";
+                            body += "<tfoot>";
+                            body += "<tr><td><input class='btn btn-primary' type='submit' value='送出'></td>";
+                            body += "</tfoot>";
+                            body += "<tbody>";
                             /*  generating each hour row by row */
                             for(var ctr_hr = 0; ctr_hr <= 23; ++ctr_hr)
                             {
@@ -180,13 +187,13 @@ function start(){
                                 }
                                 body += "</tr>";
                             }
-                            body += "<tr><td><input type='submit' value='送出'></td>";
+                            body += "</tbody>";
                             body += "</tr>";
                             body += "</form>";
                             body += "</table>";
 
                             /*  print out the page  */
-                            html = '<!DOCTYPE html><html lang="zh-Hant">' + '<html><header>' + header + '</header><body>' + body + '</body></html>';
+                            html = '<!DOCTYPE html><html lang="zh-Hant">' + '<html><head>' + head + '</head><body>' + body + '</body></html>';
                             res.writeHead(200, {
                                 'Content-Type': 'text/html'
                             });
@@ -213,14 +220,15 @@ function start(){
                             if(err) throw err;  //exception, no handling though
                             /*  variable generating html    */
                             var html = "";
-                            var header = '';
+                            var head = '';
                             var body = '';
                             var record = [];    //store parsed date object sent from sql server
                             var ctr_selected = 0;   //pointer to current user name's record on database
                             var ctr_oth_not_selected = 0;   //pointer to other user's appointment on database
-                            header += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
-                            header += "<link rel='stylesheet' type='text/css' href='http://localhost:8000/Style_user.css'>";
-                            header += "<script type='text/javascript' src='https://rawgit.com/hhhhhojeihsu/NCTU_Piano_Club_Sheet/gh-pages/Front_End/form_valid.js'></script>";
+                            head += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
+                            head += "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css' integrity='sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7' crossorigin='anonymous'>";
+                            head += "<link rel='stylesheet' type='text/css' href='http://localhost:8000/Style_user.css'>";
+                            head += "<script type='text/javascript' src='https://rawgit.com/hhhhhojeihsu/NCTU_Piano_Club_Sheet/gh-pages/Front_End/form_valid.js'></script>";
                             /*  body    */
                             body += "您欲輸入的名字是'"+ user_id + "' ";
                             /*  no record found  */
@@ -235,8 +243,11 @@ function start(){
                                 body += "您目前登記的有: <br><br>";
                                 /*  booked  */
                                 body += "<div id='booked'>";
-                                body += "<table>";
-                                body += "<tr>" + "<td>" + "日期" + "</td>" + "<td>" + "時間" + "</td>" + "<td>" + "房號" + "</td>" + "</tr>";
+                                body += "<table class='table1'>";
+                                body += "<thead>";
+                                body += "<tr>" + "<th>" + "日期" + "</th>" + "<th>" + "時間" + "</th>" + "<th   >" + "房號" + "</th>" + "</tr>";
+                                body += "</thead>";
+                                body += "<tbody>";
                                 for(var ctr = 0; ctr < rows.length; ++ctr)
                                 {
                                     record[ctr] = ParseSqlDateCht(rows[ctr].date + "");
@@ -267,9 +278,13 @@ function start(){
                                     body += "</td>";
                                     body += "</tr>";
                                 }
+                                body += "</tbody>";
                                 body += "</table>";
                                 body += "</div>";
                             }
+
+                            body += "<br>";
+
                             /*  get all data this week except the user himself  */
                             //the array is sort by time, date then room
                             sql.connection.query("SELECT * FROM schedule WHERE date >= ? AND name != ? ORDER BY time ASC, date ASC, room ASC", [query_esc_date, query_esc_name], function(err, rows_oth, fields){
@@ -302,12 +317,13 @@ function start(){
                                 }
                                 /*  point to the selectable form for user   */
                                 body += "<div id='select_menu'>";
-                                body += "<table>";
+                                body += "<table class='table1'>";
                                 body += "<form action='http://localhost:8888/process_user' onsubmit='return validateForm()' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";  //collected data is sent to process_user
                                 //create a hidden input box that stored user name passed from the main page
                                 body += "<input style='display: none;' type='text' id='hid_user' name='hid_user' value='";
                                 body += user_id;
                                 body += "' required >";
+                                body += "<thead>";
                                 body += "<tr><td colspan='15'>每週最多八個時段 每天最多三個時段</td></tr>";
                                 body += "<tr>";
                                 body += "<td style='border-bottom: 0'></td>";
@@ -339,14 +355,27 @@ function start(){
                                 /*  generate room label */
                                 for(var ctr_room = 0; ctr_room < 7; ++ctr_room)
                                 {
-                                    body += "<td>";
+                                    body += "<th>";
                                     body += "409";
-                                    body += "</td>";
-                                    body += "<td>";
+                                    body += "</th>";
+                                    body += "<th>";
                                     body += "417";
-                                    body += "</td>";
+                                    body += "</th>";
                                 }
                                 body += "</tr>";
+                                body += "</thead>";
+                                body += "<tfoot>";
+                                body += "<tr>" +
+                                    "<td><input class='btn btn-primary' type='submit' value='送出'></td>";
+
+                                for(var ctr_border = 0; ctr_border < 14; ++ctr_border)
+                                {
+                                    body += "<td></td>";
+                                }
+
+                                body += "</tr>";
+                                body += "</tfoot>";
+                                body += "<tbody>";
                                 /*  generating table    */
                                 for(var ctr_hr = 0; ctr_hr <= 23; ++ctr_hr)
                                 {
@@ -401,20 +430,12 @@ function start(){
                                     }
                                     body += "</tr>";
                                 }
-                                body += "<tr>" +
-                                    "<td><input type='submit' value='送出'></td>";
-
-                                for(var ctr_border = 0; ctr_border < 14; ++ctr_border)
-                                {
-                                    body += "<td></td>";
-                                }
-
-                                body += "</tr>";
+                                body += "</tbody>";
                                 body += "</form>";
                                 body += "</table>";
                                 body += "</div>";
                                 /*  generate the html page  */
-                                html = '<!DOCTYPE html><html lang="zh-Hant">' + '<html><header>' + header + '</header><body>' + body + '</body></html>';
+                                html = '<!DOCTYPE html><html lang="zh-Hant">' + '<html><head>' + head + '</head><body>' + body + '</body></html>';
                                 /*  print out the page  */
                                 res.writeHead(200, {
                                     'Content-Type': 'text/html'
