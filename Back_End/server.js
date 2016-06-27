@@ -109,7 +109,7 @@ function start(){
                                 //prevent cross month problem
                                 if (FirstDayOfWeek.getDate() + ctr_day > days_this_mon)
                                 {
-                                    body += now.getMonth() + 1;
+                                    body += now.getMonth() + 2;
                                     body += "/";
                                     body += (FirstDayOfWeek.getDate() + ctr_day) - days_this_mon;
                                 }
@@ -164,7 +164,9 @@ function start(){
                                 //TODO: USE 7 DAYS 2 ROOM INSTEAD OF 14 DAYS AND PARSING
                                 for(var ctr_day = 0; ctr_day < 14; ++ctr_day)
                                 {
-                                    //TODO: FIX CROSS MONTH BUG
+                                    //reference: http://stackoverflow.com/questions/6609574/javascript-date-variable-assignment
+                                    var date_obj = new Date(FirstDayOfWeek);
+                                    date_obj.setDate(FirstDayOfWeek.getDate() + Math.floor(ctr_day / 2));
                                     body += "<td>";
                                     body += "<input type='text' size='5' name='";   //fixed the size of input field
                                     /*  name of each input box  */
@@ -176,7 +178,7 @@ function start(){
                                     body += ctr_day % 2;
                                     //value acquire from database
                                     body += "' value='";
-                                    if(arr_pos < rows.length && rows[arr_pos].time === ctr_hr && record[arr_pos].getDate() === (FirstDayOfWeek.getDate() + Math.floor(ctr_day / 2)) && (ctr_day % 2) === rows[arr_pos].room)
+                                    if(arr_pos < rows.length && rows[arr_pos].time === ctr_hr && record[arr_pos].getDate() === date_obj.getDate() && (ctr_day % 2) === rows[arr_pos].room)
                                     {
                                         body += rows[arr_pos].name;
                                         ++arr_pos;
@@ -333,7 +335,7 @@ function start(){
                                     body += "<th colspan='2'>";
                                     if (FirstDayOfWeek.getDate() + ctr_day > days_this_mon)
                                     {
-                                        body += now.getMonth() + 1;
+                                        body += now.getMonth() + 2;
                                         body += "/";
                                         body += (FirstDayOfWeek.getDate() + ctr_day) - days_this_mon;
                                     }
@@ -393,10 +395,11 @@ function start(){
                                     /*  for each check box  */
                                     for(var ctr_day = 0; ctr_day < 14; ++ctr_day)
                                     {
-                                        /*  TODO: CROSS MONTH BUG   */
+                                        var date_obj = new Date(FirstDayOfWeek);
+                                        date_obj.setDate(FirstDayOfWeek.getDate() + Math.floor(ctr_day / 2));
                                         body += "<td>";
                                         //if this checkbox is not occupied by other users   */
-                                        if(ctr_oth_not_selected >= rows_oth.length || ctr_hr !== rows_oth[ctr_oth_not_selected].time || ctr_day % 2 !== rows_oth[ctr_oth_not_selected].room || FirstDayOfWeek.getDate() + Math.floor(ctr_day / 2) !== record_oth[ctr_oth_not_selected].getDate())
+                                        if(ctr_oth_not_selected >= rows_oth.length || ctr_hr !== rows_oth[ctr_oth_not_selected].time || ctr_day % 2 !== rows_oth[ctr_oth_not_selected].room || date_obj.getDate() !== record_oth[ctr_oth_not_selected].getDate())
                                         {
                                             body += "<input type='checkbox' name='";
                                             body += "c";
@@ -417,7 +420,7 @@ function start(){
                                             if(rows.length !== 0 && ctr_selected < rows.length)
                                             {
                                                 //mark the checkbox as checked
-                                                if(ctr_hr === rows[ctr_selected].time && ctr_day % 2 === rows[ctr_selected].room && FirstDayOfWeek.getDate() + Math.floor(ctr_day / 2) === record[ctr_selected].getDate())
+                                                if(ctr_hr === rows[ctr_selected].time && ctr_day % 2 === rows[ctr_selected].room && date_obj.getDate() === record[ctr_selected].getDate())
                                                 {
                                                     body += "checked";
                                                     ++ctr_selected;
@@ -816,12 +819,13 @@ function ParseSqlDateCht(input)
         8: "Sep",
         9: "Oct",
         10: "Nov",
-        11: "Dec"};
+        11: "Dec"
+    };
     /*  get Month */
     string = input.substring(4, 7);
     for(var ctr_mon = 0; ctr_mon < 12; ++ctr_mon)
     {
-        if(input === month[ctr_mon])
+        if(string === month[ctr_mon])
         {
             date_obj.setMonth(ctr_mon);
             break;
