@@ -17,6 +17,11 @@ function start(){
     var server = express();
     server.use(bodyParser.urlencoded({extended: true}));
 
+
+    //Front End File by using get
+    //reference: http://stackoverflow.com/questions/20322480/express-js-static-relative-parent-directory
+    server.use(express.static(path.join(__dirname, '..', 'Front_End')));
+
     /*  home page */
     //reference: http://stackoverflow.com/a/24308957/6007708
     server.get('/', function(req, res)
@@ -28,16 +33,6 @@ function start(){
             res.write(html);
             res.end();
         });
-    });
-
-    //Front End File by using get
-    server.user(express.static(path.join(__dirname, 'Front_End')));
-    /*  404 handler */
-    server.get('*', function(req, res)
-    {
-        var err = new Error('404 Not Found');
-        err.status = 404;
-        res.send(err.message);
     });
 
     /*  processing page transfering using POST    */
@@ -54,6 +49,14 @@ function start(){
         AdminQuery(req, res);
     });
 
+    //reference: http://stackoverflow.com/a/6528951/6007708
+    /*  404 handler */
+    server.get('*', function(req, res)
+    {
+        var err = new Error('404 Not Found');
+        err.status = 404;
+        res.send(err.message);
+    });
 
     function UserPageProcess(req, res){
         /*  process incoming data by using "formidable" */
@@ -345,7 +348,7 @@ function start(){
                                 /*  point to the selectable form for user   */
                                 body += "<div id='select_menu'>";
                                 body += "<table class='table1'>";
-                                body += "<form action='http://http://nodejs-wwwworkspace.rhcloud.com/process_user' onsubmit='return validateForm()' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";  //collected data is sent to process_user
+                                body += "<form action='http://nodejs-wwwworkspace.rhcloud.com/process_user' onsubmit='return validateForm()' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";  //collected data is sent to process_user
                                 //create a hidden input box that stored user name passed from the main page
                                 body += "<input style='display: none;' type='text' id='hid_user' name='hid_user' value='";
                                 body += user_id;
