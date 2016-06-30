@@ -1,6 +1,8 @@
 "use strict";
 
-var redirect_2_front_page = "<a href='http://hhhhhojeihsu.github.io/NCTU_Piano_Club_Sheet/'>點此返回首頁</a>";
+
+
+var redirect_2_front_page = "<a href='http://nodejs-wwwworkspace.rhcloud.com/'>點此返回首頁</a>";
 var sql = require('./sql');
 
 function start(){
@@ -11,11 +13,29 @@ function start(){
     var fs = require('fs');
     var formidable = require("formidable");
     var util = require('util');
+    var path = require("path");
     var server = express();
     server.use(bodyParser.urlencoded({extended: true}));
 
-    /*  processing page transfering using POST    */
 
+    //Front End File by using get
+    //reference: http://stackoverflow.com/questions/20322480/express-js-static-relative-parent-directory
+    server.use(express.static(path.join(__dirname, '..', 'Front_End')));
+
+    /*  home page */
+    //reference: http://stackoverflow.com/a/24308957/6007708
+    server.get('/', function(req, res)
+    {
+        fs.readFile(path.join(__dirname, '..', 'index.html'), function(err, html)
+        {
+            if(err) throw err;
+            res.writeHead(200,{"Content-Type": "text/html"});
+            res.write(html);
+            res.end();
+        });
+    });
+
+    /*  processing page transfering using POST    */
     //generate user's and administrator's selectable page
     server.post('/process', function(req, res){
         UserPageProcess(req, res);
@@ -29,6 +49,14 @@ function start(){
         AdminQuery(req, res);
     });
 
+    //reference: http://stackoverflow.com/a/6528951/6007708
+    /*  404 handler */
+    server.get('*', function(req, res)
+    {
+        var err = new Error('404 Not Found');
+        err.status = 404;
+        res.send(err.message);
+    });
 
     function UserPageProcess(req, res){
         /*  process incoming data by using "formidable" */
@@ -86,7 +114,7 @@ function start(){
                             var body = '';
                             head += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
                             head += "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css' integrity='sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7' crossorigin='anonymous'>";
-                            head += "<link rel='stylesheet' type='text/css' href='http://localhost:8000/Style_user.css'>";
+                            head += "<link rel='stylesheet' type='text/css' href='http://nodejs-wwwworkspace.rhcloud.com/Style_user.css'>";
                             body += "你現在在Administrator模式，可以任意更改與觀看本周所有的資料。'除非必要不然不應任意更改'";
                             var record = [];    //used to save data for date fetching from sql server
                             var arr_pos = 0;    //pointer point to which field to be print
@@ -97,7 +125,7 @@ function start(){
                             }
                             /*  generating table    */
                             body += "<table class='table1'>";
-                            body += "<form action='http://localhost:8888/process_admin' method='POST' enctype='multipart/form-data' name='admin_form' id='admin_form'>";    //data is sent to process_admin
+                            body += "<form action='http://nodejs-wwwworkspace.rhcloud.com/process_admin' method='POST' enctype='multipart/form-data' name='admin_form' id='admin_form'>";    //data is sent to process_admin
                             body += "<thead>";
                             body += "<tr><td colspan='15'>每週最多八個時段 每天最多三個時段</td></tr>";
                             body += "<tr>";
@@ -229,8 +257,8 @@ function start(){
                             var ctr_oth_not_selected = 0;   //pointer to other user's appointment on database
                             head += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
                             head += "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css' integrity='sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7' crossorigin='anonymous'>";
-                            head += "<link rel='stylesheet' type='text/css' href='http://localhost:8000/Style_user.css'>";
-                            head += "<script type='text/javascript' src='https://rawgit.com/hhhhhojeihsu/NCTU_Piano_Club_Sheet/gh-pages/Front_End/form_valid.js'></script>";
+                            head += "<link rel='stylesheet' type='text/css' href='http://nodejs-wwwworkspace.rhcloud.com/Style_user.css'>";
+                            head += "<script type='text/javascript' src='http://nodejs-wwwworkspace.rhcloud.com/form_valid.js'></script>";
                             /*  body    */
                             body += "您欲輸入的名字是'"+ user_id + "' ";
                             /*  no record found  */
@@ -320,7 +348,7 @@ function start(){
                                 /*  point to the selectable form for user   */
                                 body += "<div id='select_menu'>";
                                 body += "<table class='table1'>";
-                                body += "<form action='http://localhost:8888/process_user' onsubmit='return validateForm()' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";  //collected data is sent to process_user
+                                body += "<form action='http://nodejs-wwwworkspace.rhcloud.com/process_user' onsubmit='return validateForm()' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";  //collected data is sent to process_user
                                 //create a hidden input box that stored user name passed from the main page
                                 body += "<input style='display: none;' type='text' id='hid_user' name='hid_user' value='";
                                 body += user_id;
@@ -452,7 +480,7 @@ function start(){
                     {
                         console.log("Attempt failed with User: " + user_name + " Pass: " + user_pass + " detected");
                         //reference: http://stackoverflow.com/questions/17341122/link-and-execute-external-javascript-file-hosted-on-github
-                        res.redirect('https://rawgit.com/hhhhhojeihsu/NCTU_Piano_Club_Sheet/gh-pages/Front_End/fail.html');
+                        res.redirect('http://nodejs-wwwworkspace.rhcloud.com/fail.html');
                         res.end();
                     }
                 });
@@ -762,8 +790,8 @@ function start(){
     }
 
 //listening on port 8888
-server.listen(8888, function(){
-    console.log('Server running at http://localhost:8888/');
+server.listen(process.env.OPENSHIFT_NODEJS_PORT || 8080, process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1",function(){
+    console.log('Server running at whatever');
 });
 }
 
@@ -898,7 +926,7 @@ function BuildAdminResult()
     var body = "";
     var footer = "";
     head += "<meta charset='UTF-8'>";
-    head += "<meta http-equiv='refresh' content='3;url=http://hhhhhojeihsu.github.io/NCTU_Piano_Club_Sheet/'>";
+    head += "<meta http-equiv='refresh' content='3;url=http://nodejs-wwwworkspace.rhcloud.com'>";
     body += "所有變動都已儲存，網頁將在3秒鐘後自動導向至首頁。";
     body += redirect_2_front_page;
     return "<!DOCTYPE html>\n<html lang='zh-Hant'>" +  "<head>" + head + "</head>" + "<body>" + body + "</body>" + "<footer>" + footer + "</footer>" + "</html>";
@@ -985,7 +1013,7 @@ function BuildNameError()
 {
     var head = "";
     head += "<meta charset='UTF-8'>";
-    head += "<meta http-equiv='refresh' content='3;url=http://hhhhhojeihsu.github.io/NCTU_Piano_Club_Sheet/'>";
+    head += "<meta http-equiv='refresh' content='3;url=http://nodejs-wwwworkspace.rhcloud.com'>";
     var body = "";
     var footer = "";
     body += "您所輸入的名稱超過了45個字元(資料庫能儲存的上限)，麻煩您為自己取個暱稱，或是不要打一堆無意義的字元謝謝。<br>";
