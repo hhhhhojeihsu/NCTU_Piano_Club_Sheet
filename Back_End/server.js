@@ -944,8 +944,12 @@ function BuildHtmlResult(array_obj)
     function draw(sub_arr)
     {
         var string_draw  = "";
-        string_draw += "<table>";
-        string_draw += "<tr><td>日期</td><td>時間</td><td>琴房</td></tr>";
+        string_draw += "<div>";
+        string_draw += "<table class='table1'>";
+        string_draw += "<thead>";
+        string_draw += "<tr><th>日期</th><th>時間</th><th>琴房</th></tr>";
+        string_draw += "</thead>";
+        string_draw += "<tbody>";
         for(var ctr = 0; ctr < sub_arr.length; ++ctr)
         {
             //parsed the date object with type "YYYY-MM-DD"
@@ -971,13 +975,16 @@ function BuildHtmlResult(array_obj)
             string_draw += "</td>";
             string_draw += "</tr>";
         }
+        string_draw += "</tbody>";
         string_draw += "</table>";
+        string_draw += "</div>";
         return string_draw;
     }
 
     /*  head    */
     head += "<meta charset='UTF-8'>";
     head += "<title>交通大學鋼琴社琴房預約系統</title>";
+    head += "<link rel='stylesheet' type='text/css' href='http://nodejs-wwwworkspace.rhcloud.com/Style_user.css'>";
 
 
     /*  body    */
