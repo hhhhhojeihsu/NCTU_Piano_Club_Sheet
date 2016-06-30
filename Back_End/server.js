@@ -1,5 +1,8 @@
 "use strict";
 
+
+
+var redirect_2_front_page = "<a href='http://nodejs-wwwworkspace.rhcloud.com/'>點此返回首頁</a>";
 var sql = require('./sql');
 
 function start(){
@@ -10,11 +13,29 @@ function start(){
     var fs = require('fs');
     var formidable = require("formidable");
     var util = require('util');
+    var path = require("path");
     var server = express();
     server.use(bodyParser.urlencoded({extended: true}));
 
-    /*  processing page transfering using POST    */
 
+    //Front End File by using get
+    //reference: http://stackoverflow.com/questions/20322480/express-js-static-relative-parent-directory
+    server.use(express.static(path.join(__dirname, '..', 'Front_End')));
+
+    /*  home page */
+    //reference: http://stackoverflow.com/a/24308957/6007708
+    server.get('/', function(req, res)
+    {
+        fs.readFile(path.join(__dirname, '..', 'index.html'), function(err, html)
+        {
+            if(err) throw err;
+            res.writeHead(200,{"Content-Type": "text/html"});
+            res.write(html);
+            res.end();
+        });
+    });
+
+    /*  processing page transfering using POST    */
     //generate user's and administrator's selectable page
     server.post('/process', function(req, res){
         UserPageProcess(req, res);
@@ -28,6 +49,14 @@ function start(){
         AdminQuery(req, res);
     });
 
+    //reference: http://stackoverflow.com/a/6528951/6007708
+    /*  404 handler */
+    server.get('*', function(req, res)
+    {
+        var err = new Error('404 Not Found');
+        err.status = 404;
+        res.send(err.message);
+    });
 
     function UserPageProcess(req, res){
         /*  process incoming data by using "formidable" */
@@ -41,268 +70,74 @@ function start(){
             /*  change variation to prevent scope problem   */
             var user_name = fields['user_id'];
             var user_pass = fields['user_pass'];
-            var user_id = fields['user_name'];
-            /*  detect user */
-            //three user in total -> 0: su, 1: admin, 2: user
-            sql.connection.query("SELECT * FROM users", function (err, rows, fields){
-                if(err) throw err;
-                for (var counter = 0; counter < rows.length; ++counter)
-                {
-                    //detect user
-                    if (rows[counter].user_name === user_name && rows[counter].user_password === user_pass)
+            var user_id = fields['user_name'] + "";
+            //the name is stored by varchar(45) on database, deal with the exception
+            if(user_id.length > 44)
+            {
+                res.writeHead(200, {
+                    'Content-Type': 'text/html'
+                });
+                res.end(BuildNameError());
+                ;
+            }
+            else
+            {
+                /*  detect user */
+                //three user in total -> 0: su, 1: admin, 2: user
+                sql.connection.query("SELECT * FROM users", function (err, rows, fields){
+                    if(err) throw err;
+                    for (var counter = 0; counter < rows.length; ++counter)
                     {
-                        console.log("Users: " + rows[counter].user_name + " with Pass: " + rows[counter].user_password + " activity detected");
-                        break;
+                        //detect user
+                        if (rows[counter].user_name === user_name && rows[counter].user_password === user_pass)
+                        {
+                            console.log("Users: " + rows[counter].user_name + " with Pass: " + rows[counter].user_password + " activity detected");
+                            break;
+                        }
                     }
-                }
-                /*  admin mode  */
-                if(counter === 1)
-                {
-                    //starting of this week
-                    var now = new Date();
-                    var FirstDayOfWeek = new Date();
-                    var day_cht = "日一二三四五六日";
-                    var days_this_mon = ((new Date(now.getFullYear(), now.getMonth() + 1, 1)) - (new Date(now.getFullYear(), now.getMonth(), 1)))/60/60/24/1000;	//how many days
-                    FirstDayOfWeek.setDate(now.getDate() - now.getDay());
-                    var query_esc_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
-                    //get all the field this week
-                    sql.connection.query("SELECT * FROM schedule WHERE date >= ? ORDER BY time ASC, date ASC, room ASC", [query_esc_date], function(err, rows, fields){
-                        if(err) throw err;
-                        /*  variable used for generating html  */
-                        var html = "";
-                        var header = '';
-                        var body = '';
-                        header += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
-                        body += "你現在在Administrator模式，可以任意更改與觀看本周所有的資料。'除非必要不然不應任意更改'";
-                        var record = [];    //used to save data for date fetching from sql server
-                        var arr_pos = 0;    //pointer point to which field to be print
-                        /*  parsing data sent from sql server   */
-                        for(var ctr_parse = 0; ctr_parse < rows.length; ++ctr_parse)
-                        {
-                            record[ctr_parse] = ParseSqlDateCht(rows[ctr_parse].date + "");
-                        }
-                        /*  generating table    */
-                        body += "<table>";
-                        body += "<form action='http://140.113.92.122:8888/process_admin' method='POST' enctype='multipart/form-data' name='admin_form' id='admin_form'>";    //data is sent to process_admin
-                        body += "<tr><td colspan='8'>每週最多八個時段 每天最多三個時段</td></tr>";
-                        body += "<tr>";
-                        body += "<td></td>";
-                        /*  7 days in total */
-                        for(var ctr_day = 0; ctr_day < 7; ++ctr_day)
-                        {
-                            body += "<td colspan='2'>";
-                            //prevent cross month problem
-                            if (FirstDayOfWeek.getDate() + ctr_day > days_this_mon)
-                            {
-                                body += now.getMonth() + 1;
-                                body += "/";
-                                body += (FirstDayOfWeek.getDate() + ctr_day) - days_this_mon;
-                            }
-                            else
-                            {
-                                body += now.getMonth() + 1;
-                                body += "/";
-                                body += FirstDayOfWeek.getDate() + ctr_day;
-                            }
-                            //days
-                            body += " (";
-                            body += day_cht.substring(ctr_day, ctr_day + 1);
-                            body += ")";
-                            body += "</td>";
-                        }
-                        body += "</tr>";
-
-                        /*  generating room number  */
-                        body += "<tr>";
-                        body += "<td></td>";
-                        for(var ctr_room = 0; ctr_room < 7; ++ctr_room)
-                        {
-                            body += "<td>";
-                            body += "409";
-                            body += "</td>";
-                            body += "<td>";
-                            body += "417";
-                            body += "</td>";
-                        }
-                        body += "</tr>";
-
-                        /*  generating each hour row by row */
-                        for(var ctr_hr = 0; ctr_hr <= 23; ++ctr_hr)
-                        {
-                            body += "<tr>";
-                            /*  fixed time  */
-                            //TODO: USE PADDING NUMBER FUNCTION INSTEAD OF STATEMENT
-                            body += "<td>";
-                            if(ctr_hr < 10) body += "0";
-                            body += ctr_hr;
-                            body += ":00 ~ ";
-                            if(ctr_hr + 1 < 10) body += "0";
-                            if(ctr_hr + 1 == 24) body += "00";
-                            else body += (ctr_hr + 1);
-                            body += ":00";
-                            body += "</td>";
-                            /*  generating input field  */
-                            //TODO: USE 7 DAYS 2 ROOM INSTEAD OF 14 DAYS AND PARSING
-                            for(var ctr_day = 0; ctr_day < 14; ++ctr_day)
-                            {
-                                //TODO: FIX CROSS MONTH BUG
-                                body += "<td>";
-                                body += "<input type='text' size='5' name='";   //fixed the size of input field
-                                /*  name of each input box  */
-                                body += "c";
-                                body += Math.floor(ctr_day / 2);
-                                body += "_";
-                                body += ctr_hr;
-                                body += "_";
-                                body += ctr_day % 2;
-                                //value acquire from database
-                                body += "' value='";
-                                if(arr_pos < rows.length && rows[arr_pos].time === ctr_hr && record[arr_pos].getDate() === (FirstDayOfWeek.getDate() + Math.floor(ctr_day / 2)) && (ctr_day % 2) === rows[arr_pos].room)
-                                {
-                                    body += rows[arr_pos].name;
-                                    ++arr_pos;
-                                }
-                                body += "'";
-                                body += ">";
-                                body += "</td>";
-                            }
-                            body += "</tr>";
-                        }
-                        body += "<tr><td><input type='submit' value='送出'></td>";
-
-                        body += "</form>";
-                        body += "</table>";
-
-                        /*  print out the page  */
-                        html = '<!DOCTYPE html><html lang="zh-Hant">' + '<html><header>' + header + '</header><body>' + body + '</body></html>';
-                        res.writeHead(200, {
-                            'Content-Type': 'text/html'
-                        });
-                        res.end(html);
-                    });
-
-                }
-                /*  user mode   */
-                else if(counter === 2)
-                {
-                    /*  variable the store the starting of the week    */
-                    var now = new Date();
-                    var FirstDayOfWeek = new Date();
-                    var day_cht = "日一二三四五六日";
-                    var days_this_mon = ((new Date(now.getFullYear(), now.getMonth() + 1, 1)) - (new Date(now.getFullYear(), now.getMonth(), 1)))/60/60/24/1000;	//how many days
-                    FirstDayOfWeek.setDate(now.getDate() - now.getDay());
-                    /*  variable save to prevent sql injection  */
-                    var query_esc_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
-                    var query_esc_name = user_id;
-                    /*  get data from sql server where name is provided from last page   */
-                    //not that the array is sort by date time then room
-                    sql.connection.query("SELECT * FROM schedule WHERE date >= ? AND name = ? ORDER BY date ASC, time ASC, room ASC", [query_esc_date, query_esc_name], function(err, rows, fields)
+                    /*  admin mode  */
+                    if(counter === 1)
                     {
-                        if(err) throw err;  //exception, no handling though
-                        /*  variable generating html    */
-                        var html = "";
-                        var header = '';
-                        var body = '';
-                        var record = [];    //store parsed date object sent from sql server
-                        var ctr_selected = 0;   //pointer to current user name's record on database
-                        var ctr_oth_not_selected = 0;   //pointer to other user's appointment on database
-                        header += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
-                        header += "<script type='text/javascript' src='https://rawgit.com/hhhhhojeihsu/NCTU_Piano_Club_Sheet/gh-pages/Front_End/form_valid.js'></script>";
-                        /*  body    */
-                        body += "您欲輸入的名字是'"+ user_id + "' ";
-                        /*  no record found  */
-                        if(rows.length == 0)
-                        {
-                            console.log(user_id + " access system with no record found");
-                            body += "您目前並沒有登記任何時段<br>";
-                        }
-                        else    //show booked in a table
-                        {
-                            console.log(user_id + " access system with " + rows.length + " record found");
-                            body += "您目前登記的有: <br><br>";
-                            /*  booked  */
-                            body += "<table>";
-                            body += "<tr>" + "<td>" + "日期" + "</td>" + "<td>" + "時間" + "</td>" + "<td>" + "房號" + "</td>" + "</tr>";
-                            for (var ctr = 0; ctr < rows.length; ++ctr)
-                            {
-                                record[ctr] = ParseSqlDateCht(rows[ctr].date + "");
-                                body += "<tr>";
-                                /*  date    */
-                                body += "<td>";
-                                body += record[ctr].getFullYear() + "年 ";
-                                body += (record[ctr].getMonth() + 1).pad() + "月 ";
-                                body += record[ctr].getDate().pad() + "號 禮拜";
-                                body += day_cht.substring(record[ctr].getDay(), record[ctr].getDay() + 1);
-                                body += "</td>";
-                                /*  time    */
-                                body += "<td>";
-                                if (rows[ctr].time >= 12)
-                                {
-                                    if (rows[ctr].time != 12) body += (rows[ctr].time - 12).pad() + ":00 PM ~ " + (rows[ctr].time - 11).pad() + ":00 PM";
-                                    else body += rows[ctr].time.pad() + ":00 PM ~ 01:00 PM";
-                                }
-                                else
-                                {
-                                    body += rows[ctr].time.pad() + ":00 AM ~ " + (rows[ctr].time + 1).pad() + ":00 AM";
-                                }
-                                body += "</td>";
-                                /*  room    */
-                                body += "<td>";
-                                if (rows[ctr].room === 0) body += "409";
-                                else body += "417";
-                                body += "</td>";
-                                body += "</tr>";
-                            }
-                            body += "</table>";
-                        }
-                        body += "<br>";
-                        /*  get all data this week except the user himself  */
-                        //the array is sort by time, date then room
-                        sql.connection.query("SELECT * FROM schedule WHERE date >= ? AND name != ? ORDER BY time ASC, date ASC, room ASC", [query_esc_date, query_esc_name], function(err, rows_oth, fields){
+                        //starting of this week
+                        var now = new Date();
+                        var FirstDayOfWeek = new Date();
+                        var day_cht = "日一二三四五六日";
+                        var days_this_mon = ((new Date(now.getFullYear(), now.getMonth() + 1, 1)) - (new Date(now.getFullYear(), now.getMonth(), 1)))/60/60/24/1000;	//how many days
+                        FirstDayOfWeek.setDate(now.getDate() - now.getDay());
+                        var query_esc_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
+                        //get all the field this week
+                        sql.connection.query("SELECT * FROM schedule WHERE date >= ? ORDER BY time ASC, date ASC, room ASC", [query_esc_date], function(err, rows, fields){
                             if(err) throw err;
-                            //resort the array because the array is row-based
-                            rows.sort(function(a, b){
-                                if(a.time > b.time) return 1;
-                                else if(a.time === b.time)
-                                {
-                                    if(a.date > b.date) return 1;
-                                    else if(a.date === b.date)
-                                    {
-                                        if(a.room > b.room) return 1;
-                                        else return -1;
-                                    }
-                                    else return -1;
-                                }
-                                else return -1;
-                            });
-                            /*  parsing user's date object */
-                            for(var ctr_self_sort = 0; ctr_self_sort < rows.length; ++ctr_self_sort)
+                            /*  variable used for generating html  */
+                            var html = "";
+                            var head = '';
+                            var body = '';
+                            head += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
+                            head += "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css' integrity='sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7' crossorigin='anonymous'>";
+                            head += "<link rel='stylesheet' type='text/css' href='http://nodejs-wwwworkspace.rhcloud.com/Style_user.css'>";
+                            body += "你現在在Administrator模式，可以任意更改與觀看本周所有的資料。'除非必要不然不應任意更改'";
+                            var record = [];    //used to save data for date fetching from sql server
+                            var arr_pos = 0;    //pointer point to which field to be print
+                            /*  parsing data sent from sql server   */
+                            for(var ctr_parse = 0; ctr_parse < rows.length; ++ctr_parse)
                             {
-                                record[ctr_self_sort] = ParseSqlDateCht(rows[ctr_self_sort].date + "");
+                                record[ctr_parse] = ParseSqlDateCht(rows[ctr_parse].date + "");
                             }
-                            /*  parsing other users' date object    */
-                            var record_oth = [];
-                            for(var ctr_rec_oth = 0; ctr_rec_oth < rows_oth.length; ++ctr_rec_oth)
-                            {
-                                record_oth[ctr_rec_oth] = ParseSqlDateCht(rows_oth[ctr_rec_oth].date + "");
-                            }
-                            /*  point to the selectable form for user   */
-                            body += "<table>";
-                            body += "<form action='http://140.113.92.122:8888/process_user' onsubmit='return validateForm()' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";  //collected data is sent to process_user
-                            //create a hidden input box that stored user name passed from the main page
-                            body += "<input style='display: none;' type='text' id='hid_user' name='hid_user' value='";
-                            body += user_id;
-                            body += "' required >";
-                            body += "<tr><td colspan='8'>每週最多八個時段 每天最多三個時段</td></tr>";
+                            /*  generating table    */
+                            body += "<table class='table1'>";
+                            body += "<form action='http://nodejs-wwwworkspace.rhcloud.com/process_admin' method='POST' enctype='multipart/form-data' name='admin_form' id='admin_form'>";    //data is sent to process_admin
+                            body += "<thead>";
+                            body += "<tr><td colspan='15'>每週最多八個時段 每天最多三個時段</td></tr>";
                             body += "<tr>";
                             body += "<td></td>";
-                            /*  generate date label */
+                            /*  7 days in total */
                             for(var ctr_day = 0; ctr_day < 7; ++ctr_day)
                             {
-                                body += "<td colspan='2'>";
+                                body += "<th colspan='2'>";
+                                //prevent cross month problem
                                 if (FirstDayOfWeek.getDate() + ctr_day > days_this_mon)
                                 {
-                                    body += now.getMonth() + 1;
+                                    body += now.getMonth() + 2;
                                     body += "/";
                                     body += (FirstDayOfWeek.getDate() + ctr_day) - days_this_mon;
                                 }
@@ -312,31 +147,38 @@ function start(){
                                     body += "/";
                                     body += FirstDayOfWeek.getDate() + ctr_day;
                                 }
+                                //days
                                 body += " (";
                                 body += day_cht.substring(ctr_day, ctr_day + 1);
                                 body += ")";
-                                body += "</td>";
+                                body += "</th>";
                             }
                             body += "</tr>";
 
+                            /*  generating room number  */
                             body += "<tr>";
                             body += "<td></td>";
-                            /*  generate room label */
                             for(var ctr_room = 0; ctr_room < 7; ++ctr_room)
                             {
-                                body += "<td>";
+                                body += "<th>";
                                 body += "409";
-                                body += "</td>";
-                                body += "<td>";
+                                body += "</th>";
+                                body += "<th>";
                                 body += "417";
-                                body += "</td>";
+                                body += "</th>";
                             }
                             body += "</tr>";
-                            /*  generating table    */
+                            body += "</thead>";
+                            body += "<tfoot>";
+                            body += "<tr><td><input class='btn btn-primary' type='submit' value='送出'></td>";
+                            body += "</tfoot>";
+                            body += "<tbody>";
+                            /*  generating each hour row by row */
                             for(var ctr_hr = 0; ctr_hr <= 23; ++ctr_hr)
                             {
-                                /*  time label  */
                                 body += "<tr>";
+                                /*  fixed time  */
+                                //TODO: USE PADDING NUMBER FUNCTION INSTEAD OF STATEMENT
                                 body += "<td>";
                                 if(ctr_hr < 10) body += "0";
                                 body += ctr_hr;
@@ -346,68 +188,303 @@ function start(){
                                 else body += (ctr_hr + 1);
                                 body += ":00";
                                 body += "</td>";
-                                /*  for each check box  */
+                                /*  generating input field  */
+                                //TODO: USE 7 DAYS 2 ROOM INSTEAD OF 14 DAYS AND PARSING
                                 for(var ctr_day = 0; ctr_day < 14; ++ctr_day)
                                 {
-                                    /*  TODO: CROSS MONTH BUG   */
+                                    //reference: http://stackoverflow.com/questions/6609574/javascript-date-variable-assignment
+                                    var date_obj = new Date(FirstDayOfWeek);
+                                    date_obj.setDate(FirstDayOfWeek.getDate() + Math.floor(ctr_day / 2));
                                     body += "<td>";
-                                    //if this checkbox is not occupied by other users   */
-                                    if(ctr_oth_not_selected >= rows_oth.length || ctr_hr !== rows_oth[ctr_oth_not_selected].time || ctr_day % 2 !== rows_oth[ctr_oth_not_selected].room || FirstDayOfWeek.getDate() + Math.floor(ctr_day / 2) !== record_oth[ctr_oth_not_selected].getDate())
+                                    body += "<input type='text' size='5' name='";   //fixed the size of input field
+                                    /*  name of each input box  */
+                                    body += "c";
+                                    body += Math.floor(ctr_day / 2);
+                                    body += "_";
+                                    body += ctr_hr;
+                                    body += "_";
+                                    body += ctr_day % 2;
+                                    //value acquire from database
+                                    body += "' value='";
+                                    if(arr_pos < rows.length && rows[arr_pos].time === ctr_hr && record[arr_pos].getDate() === date_obj.getDate() && (ctr_day % 2) === rows[arr_pos].room)
                                     {
-                                        body += "<input type='checkbox' name='";
-                                        body += "c";
-                                        body += Math.floor(ctr_day / 2);
-                                        body += "_";
-                                        body += ctr_hr;
-                                        body += "_";
-                                        body += ctr_day % 2;
-                                        body += "' value='";
-                                        body += "c";
-                                        body += Math.floor(ctr_day / 2);
-                                        body += "_";
-                                        body += ctr_hr;
-                                        body += "_";
-                                        body += ctr_day % 2;
-                                        body += "'";
-                                        //if the user has already appoint this section before
-                                        if(rows.length !== 0 && ctr_selected < rows.length)
-                                        {
-                                            //mark the checkbox as checked
-                                            if(ctr_hr === rows[ctr_selected].time && ctr_day % 2 === rows[ctr_selected].room && FirstDayOfWeek.getDate() + Math.floor(ctr_day / 2) === record[ctr_selected].getDate())
-                                            {
-                                                body += "checked";
-                                                ++ctr_selected;
-                                            }
-                                        }
-                                        body += ">";
+                                        body += rows[arr_pos].name;
+                                        ++arr_pos;
                                     }
-                                    else ++ctr_oth_not_selected;
+                                    body += "'";
+                                    body += ">";
                                     body += "</td>";
                                 }
                                 body += "</tr>";
                             }
-                            body += "<tr><td><input type='submit' value='送出'></td>";
+                            body += "</tbody>";
+                            body += "</tr>";
                             body += "</form>";
                             body += "</table>";
-                            /*  generate the html page  */
-                            html = '<!DOCTYPE html><html lang="zh-Hant">' + '<html><header>' + header + '</header><body>' + body + '</body></html>';
+
                             /*  print out the page  */
+                            html = '<!DOCTYPE html><html lang="zh-Hant">' + '<html><head>' + head + '</head><body>' + body + '</body></html>';
                             res.writeHead(200, {
                                 'Content-Type': 'text/html'
                             });
                             res.end(html);
                         });
-                    });
-                }
-                /*  login failed    */
-                else
-                {
-                    console.log("Attempt failed with User: " + user_name + " Pass: " + user_pass + " detected");
-                    //reference: http://stackoverflow.com/questions/17341122/link-and-execute-external-javascript-file-hosted-on-github
-                    res.redirect('https://rawgit.com/hhhhhojeihsu/NCTU_Piano_Club_Sheet/gh-pages/Front_End/Fail.html');
-                    res.end();
-                }
-            });
+
+                    }
+                    /*  user mode   */
+                    else if(counter === 2)
+                    {
+                        /*  variable the store the starting of the week    */
+                        var now = new Date();
+                        var FirstDayOfWeek = new Date();
+                        var day_cht = "日一二三四五六日";
+                        var days_this_mon = ((new Date(now.getFullYear(), now.getMonth() + 1, 1)) - (new Date(now.getFullYear(), now.getMonth(), 1)))/60/60/24/1000;	//how many days
+                        FirstDayOfWeek.setDate(now.getDate() - now.getDay());
+                        /*  variable save to prevent sql injection  */
+                        var query_esc_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
+                        var query_esc_name = user_id;
+                        /*  get data from sql server where name is provided from last page   */
+                        //not that the array is sort by date time then room
+                        sql.connection.query("SELECT * FROM schedule WHERE date >= ? AND name = ? ORDER BY date ASC, time ASC, room ASC", [query_esc_date, query_esc_name], function(err, rows, fields)
+                        {
+                            if(err) throw err;  //exception, no handling though
+                            /*  variable generating html    */
+                            var html = "";
+                            var head = '';
+                            var body = '';
+                            var record = [];    //store parsed date object sent from sql server
+                            var ctr_selected = 0;   //pointer to current user name's record on database
+                            var ctr_oth_not_selected = 0;   //pointer to other user's appointment on database
+                            head += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
+                            head += "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css' integrity='sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7' crossorigin='anonymous'>";
+                            head += "<link rel='stylesheet' type='text/css' href='http://nodejs-wwwworkspace.rhcloud.com/Style_user.css'>";
+                            head += "<script type='text/javascript' src='http://nodejs-wwwworkspace.rhcloud.com/form_valid.js'></script>";
+                            /*  body    */
+                            body += "您欲輸入的名字是'"+ user_id + "' ";
+                            /*  no record found  */
+                            if(rows.length == 0)
+                            {
+                                console.log(user_id + " access system with no record found");
+                                body += "您目前並沒有登記任何時段<br>";
+                            }
+                            else    //show booked in a table
+                            {
+                                console.log(user_id + " access system with " + rows.length + " record found");
+                                body += "您目前登記的有: <br><br>";
+                                /*  booked  */
+                                body += "<div id='booked'>";
+                                body += "<table class='table1'>";
+                                body += "<thead>";
+                                body += "<tr>" + "<th>" + "日期" + "</th>" + "<th>" + "時間" + "</th>" + "<th   >" + "房號" + "</th>" + "</tr>";
+                                body += "</thead>";
+                                body += "<tbody>";
+                                for(var ctr = 0; ctr < rows.length; ++ctr)
+                                {
+                                    record[ctr] = ParseSqlDateCht(rows[ctr].date + "");
+                                    body += "<tr>";
+                                    /*  date    */
+                                    body += "<td>";
+                                    body += record[ctr].getFullYear() + "年 ";
+                                    body += (record[ctr].getMonth() + 1).pad() + "月 ";
+                                    body += record[ctr].getDate().pad() + "號 禮拜";
+                                    body += day_cht.substring(record[ctr].getDay(), record[ctr].getDay() + 1);
+                                    body += "</td>";
+                                    /*  time    */
+                                    body += "<td>";
+                                    if (rows[ctr].time >= 12)
+                                    {
+                                        if (rows[ctr].time != 12) body += (rows[ctr].time - 12).pad() + ":00 PM ~ " + (rows[ctr].time - 11).pad() + ":00 PM";
+                                        else body += rows[ctr].time.pad() + ":00 PM ~ 01:00 PM";
+                                    }
+                                    else
+                                    {
+                                        body += rows[ctr].time.pad() + ":00 AM ~ " + (rows[ctr].time + 1).pad() + ":00 AM";
+                                    }
+                                    body += "</td>";
+                                    /*  room    */
+                                    body += "<td>";
+                                    if (rows[ctr].room === 0) body += "409";
+                                    else body += "417";
+                                    body += "</td>";
+                                    body += "</tr>";
+                                }
+                                body += "</tbody>";
+                                body += "</table>";
+                                body += "</div>";
+                            }
+
+                            body += "<br>";
+
+                            /*  get all data this week except the user himself  */
+                            //the array is sort by time, date then room
+                            sql.connection.query("SELECT * FROM schedule WHERE date >= ? AND name != ? ORDER BY time ASC, date ASC, room ASC", [query_esc_date, query_esc_name], function(err, rows_oth, fields){
+                                if(err) throw err;
+                                //resort the array because the array is row-based
+                                rows.sort(function(a, b){
+                                    if(a.time > b.time) return 1;
+                                    else if(a.time === b.time)
+                                    {
+                                        if(a.date > b.date) return 1;
+                                        else if(a.date === b.date)
+                                        {
+                                            if(a.room > b.room) return 1;
+                                            else return -1;
+                                        }
+                                        else return -1;
+                                    }
+                                    else return -1;
+                                });
+                                /*  parsing user's date object */
+                                for(var ctr_self_sort = 0; ctr_self_sort < rows.length; ++ctr_self_sort)
+                                {
+                                    record[ctr_self_sort] = ParseSqlDateCht(rows[ctr_self_sort].date + "");
+                                }
+                                /*  parsing other users' date object    */
+                                var record_oth = [];
+                                for(var ctr_rec_oth = 0; ctr_rec_oth < rows_oth.length; ++ctr_rec_oth)
+                                {
+                                    record_oth[ctr_rec_oth] = ParseSqlDateCht(rows_oth[ctr_rec_oth].date + "");
+                                }
+                                /*  point to the selectable form for user   */
+                                body += "<div id='select_menu'>";
+                                body += "<table class='table1'>";
+                                body += "<form action='http://nodejs-wwwworkspace.rhcloud.com/process_user' onsubmit='return validateForm()' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";  //collected data is sent to process_user
+                                //create a hidden input box that stored user name passed from the main page
+                                body += "<input style='display: none;' type='text' id='hid_user' name='hid_user' value='";
+                                body += user_id;
+                                body += "' required >";
+                                body += "<thead>";
+                                body += "<tr><td colspan='15'>每週最多八個時段 每天最多三個時段</td></tr>";
+                                body += "<tr>";
+                                body += "<td style='border-bottom: 0'></td>";
+                                /*  generate date label */
+                                for(var ctr_day = 0; ctr_day < 7; ++ctr_day)
+                                {
+                                    body += "<th colspan='2'>";
+                                    if (FirstDayOfWeek.getDate() + ctr_day > days_this_mon)
+                                    {
+                                        body += now.getMonth() + 2;
+                                        body += "/";
+                                        body += (FirstDayOfWeek.getDate() + ctr_day) - days_this_mon;
+                                    }
+                                    else
+                                    {
+                                        body += now.getMonth() + 1;
+                                        body += "/";
+                                        body += FirstDayOfWeek.getDate() + ctr_day;
+                                    }
+                                    body += " (";
+                                    body += day_cht.substring(ctr_day, ctr_day + 1);
+                                    body += ")";
+                                    body += "</th>";
+                                }
+                                body += "</tr>";
+
+                                body += "<tr>";
+                                body += "<td style='border-top: 0'></td>";
+                                /*  generate room label */
+                                for(var ctr_room = 0; ctr_room < 7; ++ctr_room)
+                                {
+                                    body += "<th>";
+                                    body += "409";
+                                    body += "</th>";
+                                    body += "<th>";
+                                    body += "417";
+                                    body += "</th>";
+                                }
+                                body += "</tr>";
+                                body += "</thead>";
+                                body += "<tfoot>";
+                                body += "<tr>" +
+                                    "<td><input class='btn btn-primary' type='submit' value='送出'></td>";
+
+                                for(var ctr_border = 0; ctr_border < 14; ++ctr_border)
+                                {
+                                    body += "<td></td>";
+                                }
+
+                                body += "</tr>";
+                                body += "</tfoot>";
+                                body += "<tbody>";
+                                /*  generating table    */
+                                for(var ctr_hr = 0; ctr_hr <= 23; ++ctr_hr)
+                                {
+                                    /*  time label  */
+                                    body += "<tr>";
+                                    body += "<th>";
+                                    if(ctr_hr < 10) body += "0";
+                                    body += ctr_hr;
+                                    body += ":00 ~ ";
+                                    if(ctr_hr + 1 < 10) body += "0";
+                                    if(ctr_hr + 1 == 24) body += "00";
+                                    else body += (ctr_hr + 1);
+                                    body += ":00";
+                                    body += "</th>";
+                                    /*  for each check box  */
+                                    for(var ctr_day = 0; ctr_day < 14; ++ctr_day)
+                                    {
+                                        var date_obj = new Date(FirstDayOfWeek);
+                                        date_obj.setDate(FirstDayOfWeek.getDate() + Math.floor(ctr_day / 2));
+                                        body += "<td>";
+                                        //if this checkbox is not occupied by other users   */
+                                        if(ctr_oth_not_selected >= rows_oth.length || ctr_hr !== rows_oth[ctr_oth_not_selected].time || ctr_day % 2 !== rows_oth[ctr_oth_not_selected].room || date_obj.getDate() !== record_oth[ctr_oth_not_selected].getDate())
+                                        {
+                                            body += "<input type='checkbox' name='";
+                                            body += "c";
+                                            body += Math.floor(ctr_day / 2);
+                                            body += "_";
+                                            body += ctr_hr;
+                                            body += "_";
+                                            body += ctr_day % 2;
+                                            body += "' value='";
+                                            body += "c";
+                                            body += Math.floor(ctr_day / 2);
+                                            body += "_";
+                                            body += ctr_hr;
+                                            body += "_";
+                                            body += ctr_day % 2;
+                                            body += "'";
+                                            //if the user has already appoint this section before
+                                            if(rows.length !== 0 && ctr_selected < rows.length)
+                                            {
+                                                //mark the checkbox as checked
+                                                if(ctr_hr === rows[ctr_selected].time && ctr_day % 2 === rows[ctr_selected].room && date_obj.getDate() === record[ctr_selected].getDate())
+                                                {
+                                                    body += "checked";
+                                                    ++ctr_selected;
+                                                }
+                                            }
+                                            body += ">";
+                                        }
+                                        else ++ctr_oth_not_selected;
+                                        body += "</td>";
+                                    }
+                                    body += "</tr>";
+                                }
+                                body += "</tbody>";
+                                body += "</form>";
+                                body += "</table>";
+                                body += "</div>";
+                                /*  generate the html page  */
+                                html = '<!DOCTYPE html><html lang="zh-Hant">' + '<html><head>' + head + '</head><body>' + body + '</body></html>';
+                                /*  print out the page  */
+                                res.writeHead(200, {
+                                    'Content-Type': 'text/html'
+                                });
+                                res.end(html);
+                            });
+                        });
+                    }
+                    /*  login failed    */
+                    else
+                    {
+                        console.log("Attempt failed with User: " + user_name + " Pass: " + user_pass + " detected");
+                        //reference: http://stackoverflow.com/questions/17341122/link-and-execute-external-javascript-file-hosted-on-github
+                        res.redirect('http://nodejs-wwwworkspace.rhcloud.com/fail.html');
+                        res.end();
+                    }
+                });
+            }
         });
         form.parse(req);
     }
@@ -713,8 +790,8 @@ function start(){
     }
 
 //listening on port 8888
-server.listen(8888, function(){
-    console.log('Server running at http://140.113.92.122:8888/');
+server.listen(process.env.OPENSHIFT_NODEJS_PORT || 8080, process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1",function(){
+    console.log('Server running at whatever');
 });
 }
 
@@ -770,12 +847,13 @@ function ParseSqlDateCht(input)
         8: "Sep",
         9: "Oct",
         10: "Nov",
-        11: "Dec"};
+        11: "Dec"
+    };
     /*  get Month */
     string = input.substring(4, 7);
     for(var ctr_mon = 0; ctr_mon < 12; ++ctr_mon)
     {
-        if(input === month[ctr_mon])
+        if(string === month[ctr_mon])
         {
             date_obj.setMonth(ctr_mon);
             break;
@@ -848,9 +926,9 @@ function BuildAdminResult()
     var body = "";
     var footer = "";
     head += "<meta charset='UTF-8'>";
-    head += "<meta http-equiv='refresh' content='3;url=http://hhhhhojeihsu.github.io/NCTU_Piano_Club_Sheet/'>";
+    head += "<meta http-equiv='refresh' content='3;url=http://nodejs-wwwworkspace.rhcloud.com'>";
     body += "所有變動都已儲存，網頁將在3秒鐘後自動導向至首頁。";
-    body += "如果甚麼事都沒發生請點<a href='http://hhhhhojeihsu.github.io/NCTU_Piano_Club_Sheet/'>這裡</a>";
+    body += redirect_2_front_page;
     return "<!DOCTYPE html>\n<html lang='zh-Hant'>" +  "<head>" + head + "</head>" + "<body>" + body + "</body>" + "<footer>" + footer + "</footer>" + "</html>";
 }
 
@@ -927,8 +1005,20 @@ function BuildHtmlResult(array_obj)
         body += "錯誤的有(你動作太慢這格被別人搶走了QQ):\n"
         body += draw(array_obj.err);
     }
-    body += "按這裡返回首頁<a href='http://hhhhhojeihsu.github.io/NCTU_Piano_Club_Sheet/'>這裡</a>";
-    //TODO: ERROR PART
+    body += redirect_2_front_page;
+    return "<!DOCTYPE html>\n<html lang='zh-Hant'>" +  "<head>" + head + "</head>" + "<body>" + body + "</body>" + "<footer>" + footer + "</footer>" + "</html>";
+}
+
+function BuildNameError()
+{
+    var head = "";
+    head += "<meta charset='UTF-8'>";
+    head += "<meta http-equiv='refresh' content='3;url=http://nodejs-wwwworkspace.rhcloud.com'>";
+    var body = "";
+    var footer = "";
+    body += "您所輸入的名稱超過了45個字元(資料庫能儲存的上限)，麻煩您為自己取個暱稱，或是不要打一堆無意義的字元謝謝。<br>";
+    body += "系統將在3秒後從新導向至首頁";
+    body += redirect_2_front_page;
     return "<!DOCTYPE html>\n<html lang='zh-Hant'>" +  "<head>" + head + "</head>" + "<body>" + body + "</body>" + "<footer>" + footer + "</footer>" + "</html>";
 }
 

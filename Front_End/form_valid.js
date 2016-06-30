@@ -19,7 +19,7 @@ function validateForm()
                 }
                 if(daily > 3)
                 {
-                    window.alert("您禮拜" + week_cht.substring(Math.floor(i / 2), Math.floor(i / 2) + 1) + "填超過三個囉");
+                    window.alert("您禮拜" + week_cht.substring(i, i + 1) + "填超過三個囉");
                     return false;
                 }
                 else if(weekly > 8)
