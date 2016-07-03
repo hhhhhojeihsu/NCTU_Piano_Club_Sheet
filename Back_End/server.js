@@ -1,23 +1,35 @@
 "use strict";
 
+/*  requried module */
+var express = require('express');
+var bodyParser = require('body-parser');
+var fs = require('fs');
+var formidable = require("formidable");
+var util = require('util');
+var path = require("path");
 
 
-var redirect_2_front_page = "<a href='http://nodejs-wwwworkspace.rhcloud.com/'>點此返回首頁</a>";
+/*  MODE SELECTION
+    1 for openshift mode and 0 for localhost mode
+    //NOTE THAT THE MODE IN sql.js need to be changed as well
+ */
+var mode_selection = 1;
+
+/*  mode related variable   */
+var ip_address_re_ = mode_selection ? 'http://nodejs-wwwworkspace.rhcloud.com/' : 'http://localhost:8888/';
+var ip_address_local_ = mode_selection ? process.env.OPENSHIFT_NODEJS_IP : '127.0.0.1';
+var port_ = mode_selection ? process.env.OPENSHIFT_NODEJS_PORT : '8888';
+var redirect_2_front_page = "<a href=" + ip_address_re_ + ">點此返回首頁</a>";
 var sql = require('./sql');
 
 function start(){
 
-    /*  requried module */
-    var express = require('express');
-    var bodyParser = require('body-parser');
-    var fs = require('fs');
-    var formidable = require("formidable");
-    var util = require('util');
-    var path = require("path");
+
     var server = express();
     server.use(bodyParser.urlencoded({extended: true}));
-
-
+    /*  modify the index.html base on mode  */
+    change_html_path('index.html');
+    change_html_path('fail.html');
     //Front End File by using get
     //reference: http://stackoverflow.com/questions/20322480/express-js-static-relative-parent-directory
     server.use(express.static(path.join(__dirname, '..', 'Front_End')));
@@ -114,7 +126,7 @@ function start(){
                             var body = '';
                             head += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
                             head += "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css' integrity='sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7' crossorigin='anonymous'>";
-                            head += "<link rel='stylesheet' type='text/css' href='http://nodejs-wwwworkspace.rhcloud.com/Style_user.css'>";
+                            head += "<link rel='stylesheet' type='text/css' href='" + ip_address_re_ + "Style_user.css'>";
                             body += "你現在在Administrator模式，可以任意更改與觀看本周所有的資料。'除非必要不然不應任意更改'";
                             var record = [];    //used to save data for date fetching from sql server
                             var arr_pos = 0;    //pointer point to which field to be print
@@ -125,7 +137,7 @@ function start(){
                             }
                             /*  generating table    */
                             body += "<table class='table1'>";
-                            body += "<form action='http://nodejs-wwwworkspace.rhcloud.com/process_admin' method='POST' enctype='multipart/form-data' name='admin_form' id='admin_form'>";    //data is sent to process_admin
+                            body += "<form action='" + ip_address_re_ + "process_admin' method='POST' enctype='multipart/form-data' name='admin_form' id='admin_form'>";    //data is sent to process_admin
                             body += "<thead>";
                             body += "<tr><td colspan='15'>每週最多八個時段 每天最多三個時段</td></tr>";
                             body += "<tr>";
@@ -257,8 +269,8 @@ function start(){
                             var ctr_oth_not_selected = 0;   //pointer to other user's appointment on database
                             head += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
                             head += "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css' integrity='sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7' crossorigin='anonymous'>";
-                            head += "<link rel='stylesheet' type='text/css' href='http://nodejs-wwwworkspace.rhcloud.com/Style_user.css'>";
-                            head += "<script type='text/javascript' src='http://nodejs-wwwworkspace.rhcloud.com/form_valid.js'></script>";
+                            head += "<link rel='stylesheet' type='text/css' href='" + ip_address_re_ + "Style_user.css'>";
+                            head += "<script type='text/javascript' src='" + ip_address_re_ + "form_valid.js'></script>";
                             /*  body    */
                             body += "您欲輸入的名字是'"+ user_id + "' ";
                             /*  no record found  */
@@ -348,7 +360,7 @@ function start(){
                                 /*  point to the selectable form for user   */
                                 body += "<div id='select_menu'>";
                                 body += "<table class='table1'>";
-                                body += "<form action='http://nodejs-wwwworkspace.rhcloud.com/process_user' onsubmit='return validateForm()' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";  //collected data is sent to process_user
+                                body += "<form action='" + ip_address_re_ + "process_user' onsubmit='return validateForm()' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";  //collected data is sent to process_user
                                 //create a hidden input box that stored user name passed from the main page
                                 body += "<input style='display: none;' type='text' id='hid_user' name='hid_user' value='";
                                 body += user_id;
@@ -480,7 +492,7 @@ function start(){
                     {
                         console.log("Attempt failed with User: " + user_name + " Pass: " + user_pass + " detected");
                         //reference: http://stackoverflow.com/questions/17341122/link-and-execute-external-javascript-file-hosted-on-github
-                        res.redirect('http://nodejs-wwwworkspace.rhcloud.com/fail.html');
+                        res.redirect(ip_address_re_ + "fail.html");
                         res.end();
                     }
                 });
@@ -790,8 +802,8 @@ function start(){
     }
 
 //listening on port 8888
-server.listen(process.env.OPENSHIFT_NODEJS_PORT || 8080, process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1",function(){
-    console.log('Server running at whatever');
+server.listen(port_, ip_address_local_, function(){
+    console.log('Server running at mode ' + mode_selection + ', with ip: ' + ip_address_local_ + ', and port: ' + port_);
 });
 }
 
@@ -926,7 +938,7 @@ function BuildAdminResult()
     var body = "";
     var footer = "";
     head += "<meta charset='UTF-8'>";
-    head += "<meta http-equiv='refresh' content='3;url=http://nodejs-wwwworkspace.rhcloud.com'>";
+    head += "<meta http-equiv='refresh' content='3;url=" + ip_address_re_ + "'>";
     body += "所有變動都已儲存，網頁將在3秒鐘後自動導向至首頁。";
     body += redirect_2_front_page;
     return "<!DOCTYPE html>\n<html lang='zh-Hant'>" +  "<head>" + head + "</head>" + "<body>" + body + "</body>" + "<footer>" + footer + "</footer>" + "</html>";
@@ -944,8 +956,12 @@ function BuildHtmlResult(array_obj)
     function draw(sub_arr)
     {
         var string_draw  = "";
-        string_draw += "<table>";
-        string_draw += "<tr><td>日期</td><td>時間</td><td>琴房</td></tr>";
+        string_draw += "<div>";
+        string_draw += "<table class='table1'>";
+        string_draw += "<thead>";
+        string_draw += "<tr><th>日期</th><th>時間</th><th>琴房</th></tr>";
+        string_draw += "</thead>";
+        string_draw += "<tbody>";
         for(var ctr = 0; ctr < sub_arr.length; ++ctr)
         {
             //parsed the date object with type "YYYY-MM-DD"
@@ -971,13 +987,16 @@ function BuildHtmlResult(array_obj)
             string_draw += "</td>";
             string_draw += "</tr>";
         }
+        string_draw += "</tbody>";
         string_draw += "</table>";
+        string_draw += "</div>";
         return string_draw;
     }
 
     /*  head    */
     head += "<meta charset='UTF-8'>";
     head += "<title>交通大學鋼琴社琴房預約系統</title>";
+    head += "<link rel='stylesheet' type='text/css' href='http://nodejs-wwwworkspace.rhcloud.com/Style_user.css'>";
 
 
     /*  body    */
@@ -1013,7 +1032,7 @@ function BuildNameError()
 {
     var head = "";
     head += "<meta charset='UTF-8'>";
-    head += "<meta http-equiv='refresh' content='3;url=http://nodejs-wwwworkspace.rhcloud.com'>";
+    head += "<meta http-equiv='refresh' content='3;url=" + ip_address_re_ + "'>";
     var body = "";
     var footer = "";
     body += "您所輸入的名稱超過了45個字元(資料庫能儲存的上限)，麻煩您為自己取個暱稱，或是不要打一堆無意義的字元謝謝。<br>";
@@ -1021,5 +1040,32 @@ function BuildNameError()
     body += redirect_2_front_page;
     return "<!DOCTYPE html>\n<html lang='zh-Hant'>" +  "<head>" + head + "</head>" + "<body>" + body + "</body>" + "<footer>" + footer + "</footer>" + "</html>";
 }
+
+function change_html_path(target)
+{
+    //!!Restricted to index.html and fail.html only
+    var file = "";
+    if(target === 'index.html') file = path.join(__dirname, '..', target);
+    else file = path.join(__dirname, '..', 'Front_End', target)
+    //reference: http://stackoverflow.com/questions/14177087/replace-a-string-in-a-file-with-nodejs
+    fs.readFile(file, 'utf8', function(err, data){
+        if(err) throw err;
+        var result;
+        if(mode_selection)    //openshift mode
+        {
+            result = data.replace(/localhost:8888/g, 'nodejs-wwwworkspace.rhcloud.com');
+            console.log(target + ' modify to openshift mode');
+        }
+        else
+        {
+            result = data.replace(/nodejs-wwwworkspace.rhcloud.com/g, 'localhost:8888');
+            console.log(target + ' modify to localhost mode');
+        }
+        fs.writeFile(file, result, function(err, data){
+            if(err) throw err;
+        });
+    });
+}
+
 
 exports.start = start;
