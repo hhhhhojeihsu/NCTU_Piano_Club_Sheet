@@ -8,7 +8,7 @@ var host_ = mode_selection ? process.env.OPENSHIFT_MYSQL_DB_HOST : 'localhost';
 var port_ = mode_selection ? process.env.OPENSHIFT_MYSQL_DB_PORT : '3306';
 var user_ = mode_selection ? process.env.OPENSHIFT_MYSQL_DB_USERNAME : 'root';
 var password_ = mode_selection ? process.env.OPENSHIFT_MYSQL_DB_PASSWORD : 'abc';
-var database_ = mode_selection ? 'noodejs' : 'info';
+var database_ = mode_selection ? 'nodejs' : 'info';
 
 var mysql = require('mysql');
 var connection = mysql.createConnection({
