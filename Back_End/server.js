@@ -7,6 +7,7 @@ var fs = require('fs');
 var formidable = require("formidable");
 var util = require('util');
 var path = require("path");
+var sql = require('./sql');
 
 
 /*  MODE SELECTION
@@ -19,8 +20,9 @@ var mode_selection = 1;
 var ip_address_re_ = mode_selection ? 'http://nodejs-wwwworkspace.rhcloud.com/' : 'http://localhost:8888/';
 var ip_address_local_ = mode_selection ? process.env.OPENSHIFT_NODEJS_IP : '127.0.0.1';
 var port_ = mode_selection ? process.env.OPENSHIFT_NODEJS_PORT : '8888';
+
+/*  global variable */
 var redirect_2_front_page = "<a href=" + ip_address_re_ + ">點此返回首頁</a>";
-var sql = require('./sql');
 
 function start(){
 
@@ -127,7 +129,8 @@ function start(){
                             head += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
                             head += "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css' integrity='sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7' crossorigin='anonymous'>";
                             head += "<link rel='stylesheet' type='text/css' href='" + ip_address_re_ + "Style_user.css'>";
-                            body += "你現在在Administrator模式，可以任意更改與觀看本周所有的資料。'除非必要不然不應任意更改'";
+                            head += "<script type='text/javascript' src='" + ip_address_re_ + "form_valid.js'></script>";
+                            body += "你現在在Administrator模式，可以任意更改與觀看本周所有的資料。'除非必要不然不應任意更改'。<br>預設也會檢驗填入資料，若有需要保留琴房供特殊使用且超出預設限制，請換一個名字填入表格";
                             var record = [];    //used to save data for date fetching from sql server
                             var arr_pos = 0;    //pointer point to which field to be print
                             /*  parsing data sent from sql server   */
@@ -137,7 +140,7 @@ function start(){
                             }
                             /*  generating table    */
                             body += "<table class='table1'>";
-                            body += "<form action='" + ip_address_re_ + "process_admin' method='POST' enctype='multipart/form-data' name='admin_form' id='admin_form'>";    //data is sent to process_admin
+                            body += "<form action='" + ip_address_re_ + "process_admin' onsubmit='return validateForm_admin()' method='POST' enctype='multipart/form-data' name='admin_form' id='admin_form'>";    //data is sent to process_admin
                             body += "<thead>";
                             body += "<tr><td colspan='15'>每週最多八個時段 每天最多三個時段</td></tr>";
                             body += "<tr>";
@@ -360,7 +363,7 @@ function start(){
                                 /*  point to the selectable form for user   */
                                 body += "<div id='select_menu'>";
                                 body += "<table class='table1'>";
-                                body += "<form action='" + ip_address_re_ + "process_user' onsubmit='return validateForm()' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";  //collected data is sent to process_user
+                                body += "<form action='" + ip_address_re_ + "process_user' onsubmit='return validateForm_user()' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";  //collected data is sent to process_user
                                 //create a hidden input box that stored user name passed from the main page
                                 body += "<input style='display: none;' type='text' id='hid_user' name='hid_user' value='";
                                 body += user_id;
