@@ -100,6 +100,7 @@ function start(){
                 //three user in total -> 0: su, 1: admin, 2: user
                 sql.connection.query("SELECT * FROM users", function (err, rows, fields){
                     if(err) throw err;
+                    console.log("Current time is: " + Date());
                     for (var counter = 0; counter < rows.length; ++counter)
                     {
                         //detect user
