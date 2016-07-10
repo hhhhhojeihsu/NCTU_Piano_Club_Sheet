@@ -29,28 +29,17 @@ var redirect_2_front_page = "<a href=" + ip_address_re_ + ">點此返回首頁</
 //default time is set to now, can be modify to debug
 function getnow()
 {
+    //CHANGE THIS LINE TO MODIFY THE CURRENT TIME FOR DEBUG
     var d = new Date();
     //prevent timezone error and SET TO GMT+8
     if((d.getHours() + (d.getTimezoneOffset() / 60) + 8) >= 24) //jump to next day
     {
         d.setDate(d.getDate() + 1);
     }
-    d.setHours(d.getUTCHours() + 8);
+    d.setHours((d.getUTCHours() + 8) % 24);
     return d;
 }
 
-function getdays_this_mon()
-{
-    var n = getnow();
-    return ((new Date(n.getFullYear(), n.getMonth() + 1, 1)) - (new Date(n.getFullYear(), n.getMonth(), 1)))/60/60/24/1000;
-}
-
-function getFirstDayOfWeek()
-{
-    var n = getnow(), d = getnow();
-    d.setDate(n.getDate() - n.getDay());
-    return d;
-}
 
 function start(){
 
@@ -1093,6 +1082,20 @@ function change_html_path(target)
             if(err) throw err;
         });
     });
+}
+
+
+function getdays_this_mon()
+{
+    var n = getnow();
+    return ((new Date(n.getFullYear(), n.getMonth() + 1, 1)) - (new Date(n.getFullYear(), n.getMonth(), 1)))/60/60/24/1000;
+}
+
+function getFirstDayOfWeek()
+{
+    var n = getnow(), d = getnow();
+    d.setDate(n.getDate() - n.getDay());
+    return d;
 }
 
 
