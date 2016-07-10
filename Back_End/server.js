@@ -168,7 +168,8 @@ function start(){
                                 //prevent cross month problem
                                 if (FirstDayOfWeek.getDate() + ctr_day > days_this_mon)
                                 {
-                                    body += FirstDayOfWeek.getMonth() + 2;
+                                    //cross year
+                                    body += FirstDayOfWeek.getMonth() + 2 !== 13 ? FirstDayOfWeek.getMonth() + 2 : 1;
                                     body += "/";
                                     body += (FirstDayOfWeek.getDate() + ctr_day) - days_this_mon;
                                 }
@@ -393,7 +394,7 @@ function start(){
                                     body += "<th colspan='2'>";
                                     if (FirstDayOfWeek.getDate() + ctr_day > days_this_mon)
                                     {
-                                        body += FirstDayOfWeek.getMonth() + 2;
+                                        body += FirstDayOfWeek.getMonth() + 2 !== 13 ? FirstDayOfWeek.getMonth() + 2 : 1
                                         body += "/";
                                         body += (FirstDayOfWeek.getDate() + ctr_day) - days_this_mon;
                                     }
@@ -519,7 +520,6 @@ function start(){
         form.parse(req);
     }
 
-    //TODO: Database Primary Key Overflow
     //TODO: FIX ASYNC HELL BY ADJUST THE STRUCTURE
     function UserQuery(req, res)
     {
