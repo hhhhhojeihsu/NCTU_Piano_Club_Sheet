@@ -29,28 +29,17 @@ var redirect_2_front_page = "<a href=" + ip_address_re_ + ">點此返回首頁</
 //default time is set to now, can be modify to debug
 function getnow()
 {
+    //CHANGE THIS LINE TO MODIFY THE CURRENT TIME FOR DEBUG
     var d = new Date();
     //prevent timezone error and SET TO GMT+8
     if((d.getHours() + (d.getTimezoneOffset() / 60) + 8) >= 24) //jump to next day
     {
         d.setDate(d.getDate() + 1);
     }
-    d.setHours(d.getUTCHours() + 8);
+    d.setHours((d.getUTCHours() + 8) % 24);
     return d;
 }
 
-function getdays_this_mon()
-{
-    var n = getnow();
-    return ((new Date(n.getFullYear(), n.getMonth() + 1, 1)) - (new Date(n.getFullYear(), n.getMonth(), 1)))/60/60/24/1000;
-}
-
-function getFirstDayOfWeek()
-{
-    var n = getnow(), d = getnow();
-    d.setDate(n.getDate() - n.getDay());
-    return d;
-}
 
 function start(){
 
@@ -179,13 +168,14 @@ function start(){
                                 //prevent cross month problem
                                 if (FirstDayOfWeek.getDate() + ctr_day > days_this_mon)
                                 {
-                                    body += now.getMonth() + 2;
+                                    //cross year
+                                    body += FirstDayOfWeek.getMonth() + 2 !== 13 ? FirstDayOfWeek.getMonth() + 2 : 1;
                                     body += "/";
                                     body += (FirstDayOfWeek.getDate() + ctr_day) - days_this_mon;
                                 }
                                 else
                                 {
-                                    body += now.getMonth() + 1;
+                                    body += FirstDayOfWeek.getMonth() + 1;
                                     body += "/";
                                     body += FirstDayOfWeek.getDate() + ctr_day;
                                 }
@@ -404,13 +394,13 @@ function start(){
                                     body += "<th colspan='2'>";
                                     if (FirstDayOfWeek.getDate() + ctr_day > days_this_mon)
                                     {
-                                        body += now.getMonth() + 2;
+                                        body += FirstDayOfWeek.getMonth() + 2 !== 13 ? FirstDayOfWeek.getMonth() + 2 : 1
                                         body += "/";
                                         body += (FirstDayOfWeek.getDate() + ctr_day) - days_this_mon;
                                     }
                                     else
                                     {
-                                        body += now.getMonth() + 1;
+                                        body += FirstDayOfWeek.getMonth() + 1;
                                         body += "/";
                                         body += FirstDayOfWeek.getDate() + ctr_day;
                                     }
@@ -530,7 +520,6 @@ function start(){
         form.parse(req);
     }
 
-    //TODO: Database Primary Key Overflow
     //TODO: FIX ASYNC HELL BY ADJUST THE STRUCTURE
     function UserQuery(req, res)
     {
@@ -827,13 +816,11 @@ function start(){
 
         form.parse(req);
     }
-
-//listening on port 8888
-server.listen(port_, ip_address_local_, function(){
-    console.log('Server running at mode ' + mode_selection + ', with ip: ' + ip_address_local_ + ', and port: ' + port_);
-    console.log("Current time is: " + getnow());
-    console.log("Current timezone offset is: " + getnow().getTimezoneOffset());
-});
+    //listening on port 8888
+    server.listen(port_, ip_address_local_, function(){
+        console.log('Server running at mode ' + mode_selection + ', with ip: ' + ip_address_local_ + ', and port: ' + port_);
+        console.log("Current timezone offset is: " + getnow().getTimezoneOffset());
+    });
 }
 
 //DeleteFromDb is the last asynchrnous function called before respond
@@ -1093,6 +1080,20 @@ function change_html_path(target)
             if(err) throw err;
         });
     });
+}
+
+
+function getdays_this_mon()
+{
+    var f = getFirstDayOfWeek();
+    return ((new Date(f.getFullYear(), f.getMonth() + 1, 1)) - (new Date(f.getFullYear(), f.getMonth(), 1)))/60/60/24/1000;
+}
+
+function getFirstDayOfWeek()
+{
+    var n = getnow(), d = getnow();
+    d.setDate(n.getDate() - n.getDay());
+    return d;
 }
 
 
