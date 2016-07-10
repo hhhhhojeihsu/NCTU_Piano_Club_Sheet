@@ -24,6 +24,30 @@ var port_ = mode_selection ? process.env.OPENSHIFT_NODEJS_PORT : '8888';
 /*  global variable */
 var redirect_2_front_page = "<a href=" + ip_address_re_ + ">點此返回首頁</a>";
 
+
+/*  time variable   */
+//default time is set to now, can be modify to debug
+function getnow()
+{
+    var d = new Date();
+    //prevent timezone error and SET TO GMT+8
+    d.setHours(d.getUTCHours() + 8);
+    return d;
+}
+
+function getdays_this_mon()
+{
+    var n = getnow();
+    return ((new Date(n.getFullYear(), n.getMonth() + 1, 1)) - (new Date(n.getFullYear(), n.getMonth(), 1)))/60/60/24/1000;
+}
+
+function getFirstDayOfWeek()
+{
+    var n = getnow(), d = getnow();
+    d.setDate(n.getDate() - n.getDay());
+    return d;
+}
+
 function start(){
 
 
@@ -100,7 +124,6 @@ function start(){
                 //three user in total -> 0: su, 1: admin, 2: user
                 sql.connection.query("SELECT * FROM users", function (err, rows, fields){
                     if(err) throw err;
-                    console.log("Current time is: " + Date());
                     for (var counter = 0; counter < rows.length; ++counter)
                     {
                         //detect user
@@ -114,11 +137,10 @@ function start(){
                     if(counter === 1)
                     {
                         //starting of this week
-                        var now = new Date();
-                        var FirstDayOfWeek = new Date();
+                        var now = getnow();
+                        var FirstDayOfWeek = getFirstDayOfWeek();
                         var day_cht = "日一二三四五六日";
-                        var days_this_mon = ((new Date(now.getFullYear(), now.getMonth() + 1, 1)) - (new Date(now.getFullYear(), now.getMonth(), 1)))/60/60/24/1000;	//how many days
-                        FirstDayOfWeek.setDate(now.getDate() - now.getDay());
+                        var days_this_mon = getdays_this_mon();
                         var query_esc_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
                         //get all the field this week
                         sql.connection.query("SELECT * FROM schedule WHERE date >= ? ORDER BY time ASC, date ASC, room ASC", [query_esc_date], function(err, rows, fields){
@@ -251,11 +273,10 @@ function start(){
                     else if(counter === 2)
                     {
                         /*  variable the store the starting of the week    */
-                        var now = new Date();
-                        var FirstDayOfWeek = new Date();
+                        var now = getnow();
+                        var FirstDayOfWeek = getFirstDayOfWeek();
                         var day_cht = "日一二三四五六日";
-                        var days_this_mon = ((new Date(now.getFullYear(), now.getMonth() + 1, 1)) - (new Date(now.getFullYear(), now.getMonth(), 1)))/60/60/24/1000;	//how many days
-                        FirstDayOfWeek.setDate(now.getDate() - now.getDay());
+                        var days_this_mon = getdays_this_mon();
                         /*  variable save to prevent sql injection  */
                         var query_esc_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
                         var query_esc_name = user_id;
@@ -514,9 +535,8 @@ function start(){
             min: [],
             error: []
         };  //variable to store what user change this time
-        var now = new Date();
-        var FirstDayOfWeek = new Date();
-        FirstDayOfWeek.setDate(now.getDate() - now.getDay());
+        var now = getnow();
+        var FirstDayOfWeek = getFirstDayOfWeek();
         /*  parse what user checkced    */
         var form = new formidable.IncomingForm();
         var fields = [];
@@ -681,9 +701,8 @@ function start(){
             var fields_parse_date = [];
             var marker_new = [];    //array used to record which field needs to insert into database
             var marker_update = []; //base on marker_new, used to see which field needs update instead of insert or delete
-            var now = new Date();
-            var FirstDayOfWeek = new Date();
-            FirstDayOfWeek.setDate(now.getDate() - now.getDay());
+            var now = getnow();
+            var FirstDayOfWeek = getFirstDayOfWeek();
             var query_esc_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
             /*  pasrse input by using function ParseCheckbox_AdminForm
                 since they share the same name for each field
@@ -807,7 +826,10 @@ function start(){
 
 //listening on port 8888
 server.listen(port_, ip_address_local_, function(){
+    var d = new Date();
     console.log('Server running at mode ' + mode_selection + ', with ip: ' + ip_address_local_ + ', and port: ' + port_);
+    console.log("Current time is: " + d);
+    console.log("Current timezone offset is: " + d.getTimezoneOffset());
 });
 }
 
@@ -910,9 +932,8 @@ function ParseCheckbox_AdminForm(input, mode)
     for(var ctr_all = start_pt; ctr_all < input.length; ++ctr_all)
     {
         var temp = [];
-        var now = new Date();
-        var FirstDayOfWeek = new Date();
-        FirstDayOfWeek.setDate(now.getDate() - now.getDay());
+        var now = getnow();
+        var FirstDayOfWeek = getFirstDayOfWeek();
         var date_temp = FirstDayOfWeek;
         date_temp.setHours(0, 0, 0, 0); //need to set hour to 0, 0, 0, 0 since sometimes we would use date comparison operator
         /*  by finding the character '_' to determine which day this week or time or room, and then convert them from string to number  */
