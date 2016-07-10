@@ -544,18 +544,7 @@ function start(){
             //since data sent from html page is sorted by time, date, room
             //re-sort it by date, time, room
             query.sort(function(a, b){
-                if(a[0] > b[0]) return 1;
-                else if(a[0] === b[0])
-                {
-                    if(a[1] > b[1]) return 1;
-                    else if(a[1] === b[1])
-                    {
-                        if(a[2] > b[2]) return 1;
-                        else return -1;
-                    }
-                    else return -1;
-                }
-                else return -1;
+                sortby_dtm(a, b);
             });
             var query_origin_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate();
             var query_origin_name = fields[0];
@@ -715,18 +704,7 @@ function start(){
             //sort by date, time, name
             //TODO: THE function(a, b) thing can be replace an actual function
             fields_parse_date.sort(function(a, b){
-                if(a[0] > b[0]) return 1;
-                else if(a[0] === b[0])
-                {
-                    if(a[1] > b[1]) return 1;
-                    else if(a[1] === b[1])
-                    {
-                        if(a[2] > b[2]) return 1;
-                        else return -1;
-                    }
-                    else return -1;
-                }
-                else return -1;
+                sortby_dtm(a, b);
             });
             //initialize marker
             for(var ctr_ini = 0; ctr_ini < fields_parse_date.length; ++ctr_ini)
@@ -1094,6 +1072,23 @@ function getFirstDayOfWeek()
     var n = getnow(), d = getnow();
     d.setDate(n.getDate() - n.getDay());
     return d;
+}
+
+//re-sort it by date, time, room
+function sortby_dtm(a, b)
+{
+    if(a[0] > b[0]) return 1;
+    else if(a[0] === b[0])
+    {
+        if(a[1] > b[1]) return 1;
+        else if(a[1] === b[1])
+        {
+            if(a[2] > b[2]) return 1;
+            else return -1;
+        }
+        else return -1;
+    }
+    else return -1;
 }
 
 
