@@ -31,6 +31,10 @@ function getnow()
 {
     var d = new Date();
     //prevent timezone error and SET TO GMT+8
+    if((d.getHours() + (d.getTimezoneOffset() / 60) + 8) >= 24) //jump to next day
+    {
+        d.setDate(d.getDate() + 1);
+    }
     d.setHours(d.getUTCHours() + 8);
     return d;
 }
@@ -826,10 +830,9 @@ function start(){
 
 //listening on port 8888
 server.listen(port_, ip_address_local_, function(){
-    var d = new Date();
     console.log('Server running at mode ' + mode_selection + ', with ip: ' + ip_address_local_ + ', and port: ' + port_);
-    console.log("Current time is: " + d);
-    console.log("Current timezone offset is: " + d.getTimezoneOffset());
+    console.log("Current time is: " + getnow());
+    console.log("Current timezone offset is: " + getnow().getTimezoneOffset());
 });
 }
 
