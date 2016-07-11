@@ -1,6 +1,6 @@
 "use strict";
 
-/*  requried module */
+/*  required module */
 var express = require('express');
 var bodyParser = require('body-parser');
 var fs = require('fs');
@@ -23,6 +23,7 @@ var port_ = mode_selection ? process.env.OPENSHIFT_NODEJS_PORT : '8888';
 
 /*  global variable */
 var redirect_2_front_page = "<a href=" + ip_address_re_ + ">點此返回首頁</a>";
+var day_cht = "日一二三四五六";
 
 
 /*  time variable   */
@@ -66,7 +67,7 @@ function start(){
         });
     });
 
-    /*  processing page transfering using POST    */
+    /*  processing page transferring using POST    */
     //generate user's and administrator's selectable page
     server.post('/process', function(req, res){
         UserPageProcess(req, res);
@@ -109,7 +110,6 @@ function start(){
                     'Content-Type': 'text/html'
                 });
                 res.end(BuildNameError());
-                ;
             }
             else
             {
@@ -130,11 +130,9 @@ function start(){
                     if(counter === 1)
                     {
                         //starting of this week
-                        var now = getnow();
                         var FirstDayOfWeek = getFirstDayOfWeek();
-                        var day_cht = "日一二三四五六日";
-                        var days_this_mon = getdays_this_mon();
-                        var query_esc_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
+                        days_this_mon = getdays_this_mon();
+                        query_esc_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
                         //get all the field this week
                         sql.connection.query("SELECT * FROM schedule WHERE date >= ? ORDER BY time ASC, date ASC, room ASC", [query_esc_date], function(err, rows, fields){
                             if(err) throw err;
@@ -216,7 +214,7 @@ function start(){
                                 body += "</td>";
                                 /*  generating input field  */
                                 //TODO: USE 7 DAYS 2 ROOM INSTEAD OF 14 DAYS AND PARSING
-                                for(var ctr_day = 0; ctr_day < 14; ++ctr_day)
+                                for(ctr_day = 0; ctr_day < 14; ++ctr_day)
                                 {
                                     //reference: http://stackoverflow.com/questions/6609574/javascript-date-variable-assignment
                                     var date_obj = new Date(FirstDayOfWeek);
@@ -261,9 +259,7 @@ function start(){
                     else if(counter === 2)
                     {
                         /*  variable the store the starting of the week    */
-                        var now = getnow();
-                        var FirstDayOfWeek = getFirstDayOfWeek();
-                        var day_cht = "日一二三四五六日";
+                        FirstDayOfWeek = getFirstDayOfWeek();
                         var days_this_mon = getdays_this_mon();
                         /*  variable save to prevent sql injection  */
                         var query_esc_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
@@ -375,7 +371,7 @@ function start(){
                                     body += "<th colspan='2'>";
                                     if (FirstDayOfWeek.getDate() + ctr_day > days_this_mon)
                                     {
-                                        body += FirstDayOfWeek.getMonth() + 2 !== 13 ? FirstDayOfWeek.getMonth() + 2 : 1
+                                        body += FirstDayOfWeek.getMonth() + 2 !== 13 ? FirstDayOfWeek.getMonth() + 2 : 1;
                                         body += "/";
                                         body += (FirstDayOfWeek.getDate() + ctr_day) - days_this_mon;
                                     }
@@ -433,7 +429,7 @@ function start(){
                                     body += ":00";
                                     body += "</th>";
                                     /*  for each check box  */
-                                    for(var ctr_day = 0; ctr_day < 14; ++ctr_day)
+                                    for(ctr_day = 0; ctr_day < 14; ++ctr_day)
                                     {
                                         var date_obj = new Date(FirstDayOfWeek);
                                         date_obj.setDate(FirstDayOfWeek.getDate() + Math.floor(ctr_day / 2));
@@ -509,9 +505,8 @@ function start(){
             min: [],
             error: []
         };  //variable to store what user change this time
-        var now = getnow();
         var FirstDayOfWeek = getFirstDayOfWeek();
-        /*  parse what user checkced    */
+        /*  parse what user checked    */
         var form = new formidable.IncomingForm();
         var fields = [];
         form.on('field', function(field, value){
@@ -534,11 +529,11 @@ function start(){
             sql.connection.query("SELECT * from schedule WHERE date >= ? AND name = ? ORDER BY date ASC, time ASC, room ASC", [query_origin_date, query_origin_name], function(err, rows_origin, fields_origin){
                 if(err) throw err;
                 var chk_ptr = 0;    //pointer points to the original acquire from database
-                var rows_orgin_marker = []; //marker use to save which checkbox is identical to the one on database
+                var rows_origin_marker = []; //marker use to save which checkbox is identical to the one on database
                 /*  initialize the marker array */
                 for(var ctr_marker = 0; ctr_marker < rows_origin.length; ++ctr_marker)
                 {
-                    rows_orgin_marker[ctr_marker] = false;
+                    rows_origin_marker[ctr_marker] = false;
                 }
                 /*  iterating through all checkboxes    */
                 query.forEach(function(element, index, array){
@@ -549,8 +544,8 @@ function start(){
                     //TODO: CHANGE TO THE METHOD USED IN FUNCTION AdminQuery
 
                     /*  compare with data on sql    */
-                    //refrence: http://stackoverflow.com/questions/7244513/javascript-date-comparisons-dont-equal
-                    //if the data point to is eariler than current pointed date object
+                    //reference: http://stackoverflow.com/questions/7244513/javascript-date-comparisons-dont-equal
+                    //if the data point to is earlier than current pointed date object
                     //keep point to the next one until it's equal or bigger than
                     while(
                     chk_ptr < rows_origin.length &&
@@ -570,12 +565,12 @@ function start(){
                         rows_origin[chk_ptr].room === element[2])
                     )
                     {
-                        rows_orgin_marker[chk_ptr] = true;
+                        rows_origin_marker[chk_ptr] = true;
                         ++chk_ptr;
                         //reference: http://stackoverflow.com/questions/18452920/continue-in-cursor-foreach
                         if(index === array.length - 1)
                         {
-                            changes = DeleteFromDb(rows_origin, rows_orgin_marker, changes, fields, res);
+                            changes = DeleteFromDb(rows_origin, rows_origin_marker, changes, fields, res);
                             console.log("Caller 1");
                         }
                         return true;
@@ -588,7 +583,7 @@ function start(){
                     sql.connection.query("SELECT `name` from `schedule` WHERE `date` = ? AND `time` = ? AND `room` = ?", [qry_esc_date, qry_esc_time, qry_esc_room],function(err, rows_chk, fields_func){
                         if(err) throw err;
                         //variable used to insert into database
-                        var sql_str_wirtten_esacpe_obj = {
+                        var sql_str_written_escape_obj = {
                             date: element[0].getFullYear() + "-" + (element[0].getMonth() + 1) + "-" + element[0].getDate(),
                             time: Number(element[1]),
                             room: Number(element[2]),
@@ -597,14 +592,14 @@ function start(){
                         //no record found -> force write
                         if(rows_chk.length === 0)
                         {
-                            sql.connection.query("INSERT INTO `schedule` SET ?", sql_str_wirtten_esacpe_obj,function(err, rows_sql_str_written, fields_func){
+                            sql.connection.query("INSERT INTO `schedule` SET ?", sql_str_written_escape_obj,function(err, rows_sql_str_written, fields_func){
                                 if(err) throw err;
                                 console.log(this.sql);
-                                changes.add.push(sql_str_wirtten_esacpe_obj);   //record the changes
-                                //refrence: http://stackoverflow.com/questions/29738535/catch-foreach-last-iteration
+                                changes.add.push(sql_str_written_escape_obj);   //record the changes
+                                //reference: http://stackoverflow.com/questions/29738535/catch-foreach-last-iteration
                                 if(index === array.length - 1)
                                 {
-                                    changes = DeleteFromDb(rows_origin, rows_orgin_marker, changes, fields, res);
+                                    changes = DeleteFromDb(rows_origin, rows_origin_marker, changes, fields, res);
                                     console.log("Caller 2");
                                 }
                             });
@@ -613,20 +608,20 @@ function start(){
                         else if(rows_chk[0].name !== fields[0])
                         {
                             //ERROR: THIS SPACE IS RESERVED BY OTHERS
-                            changes.error.push(sql_str_wirtten_esacpe_obj);
+                            changes.error.push(sql_str_written_escape_obj);
                             console.log("INSERT INTO `schedule` SET date = " + (element[0].getFullYear() + "-" + (element[0].getMonth() + 1) + "-" + element[0].getDate()) + " date = " + element[1] + " room = " + element[2] + " Failed");
                             if(index === array.length - 1)
                             {
-                                changes = DeleteFromDb(rows_origin, rows_orgin_marker, changes, fields, res);
+                                changes = DeleteFromDb(rows_origin, rows_origin_marker, changes, fields, res);
                                 console.log("Caller 3");
                             }
                         }
-                        //if the name is the recived one then do nothing
+                        //if the name is the received one then do nothing
                         else
                         {
                             if(index === array.length - 1)
                             {
-                                changes = DeleteFromDb(rows_origin, rows_orgin_marker, changes, fields, res);
+                                changes = DeleteFromDb(rows_origin, rows_origin_marker, changes, fields, res);
                                 console.log("Caller 4");
                             }
                         }
@@ -634,7 +629,7 @@ function start(){
                 });
                 if(query.length === 0)
                 {
-                    changes = DeleteFromDb(rows_origin, rows_orgin_marker, changes, fields, res);
+                    changes = DeleteFromDb(rows_origin, rows_origin_marker, changes, fields, res);
                     console.log("Caller 5");
                 }
             });
@@ -658,21 +653,20 @@ function start(){
             var fields_parse_date = [];
             var marker_new = [];    //array used to record which field needs to insert into database
             var marker_update = []; //base on marker_new, used to see which field needs update instead of insert or delete
-            var now = getnow();
             var FirstDayOfWeek = getFirstDayOfWeek();
             var query_esc_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
-            /*  pasrse input by using function ParseCheckbox_AdminForm
+            /*  parse input by using function ParseCheckbox_AdminForm
                 since they share the same name for each field
              */
-            //first assing to array
+            //first copy to array
             for(var ctr_fields_cp = 0; ctr_fields_cp < fields.length; ++ctr_fields_cp)
             {
                 fields_parse_date[ctr_fields_cp] = fields[ctr_fields_cp][0];
             }
             //parse by calling function
             fields_parse_date = ParseCheckbox_AdminForm(fields_parse_date, 0);
-            //copy the field's user name into array as weel
-            for(var ctr_fields_cp = 0; ctr_fields_cp < fields.length; ++ctr_fields_cp)
+            //copy the field's user name into array
+            for(ctr_fields_cp = 0; ctr_fields_cp < fields.length; ++ctr_fields_cp)
             {
                 fields_parse_date[ctr_fields_cp][3] = fields[ctr_fields_cp][1];
             }
@@ -715,13 +709,11 @@ function start(){
                         marker_old[old_ptr] = false;
                         ++old_ptr;
                         ++new_ptr;
-                        continue;
                     }
                     //iterate to next one in opposite condition
                     else
                     {
                         ++new_ptr;
-                        continue;
                     }
                 }
 
@@ -736,13 +728,13 @@ function start(){
                 //addition
                 marker_new.forEach(function(element, index, array){
                     if(element) return true;
-                    var sql_str_wirtten_esacpe_obj = {
+                    var sql_str_written_escape_obj = {
                         date: fields_parse_date[index][0].getFullYear() + "-" + (fields_parse_date[index][0].getMonth() + 1) + "-" + fields_parse_date[index][0].getDate(),
                         time: Number(fields_parse_date[index][1]),
                         room: Number(fields_parse_date[index][2]),
                         name: fields_parse_date[index][3]
                     };
-                    sql.connection.query("INSERT INTO `schedule` SET ?", sql_str_wirtten_esacpe_obj, function(err, rows_sql_str_written, fields_func){
+                    sql.connection.query("INSERT INTO `schedule` SET ?", sql_str_written_escape_obj, function(err, rows_sql_str_written, fields_func){
                         if(err) throw err;
                         console.log(this.sql);
                     });
@@ -750,8 +742,8 @@ function start(){
                 //update
                 marker_update.forEach(function(element, index, array){
                     if(element === -1) return true;
-                    var sql_str_wirtten_esacpe_arr = [fields_parse_date[index][0].getFullYear() + "-" + (fields_parse_date[index][0].getMonth() + 1) + "-" + fields_parse_date[index][0].getDate(), Number(fields_parse_date[index][1]), Number(fields_parse_date[index][2]), fields_parse_date[index][3], element];
-                    sql.connection.query("UPDATE `schedule` SET `date` = ?, `time` = ?,`room` = ?, `name` = ? WHERE `id` = ?", sql_str_wirtten_esacpe_arr, function(err, rows_sql_updated, fields_func){
+                    var sql_str_written_escape_arr = [fields_parse_date[index][0].getFullYear() + "-" + (fields_parse_date[index][0].getMonth() + 1) + "-" + fields_parse_date[index][0].getDate(), Number(fields_parse_date[index][1]), Number(fields_parse_date[index][2]), fields_parse_date[index][3], element];
+                    sql.connection.query("UPDATE `schedule` SET `date` = ?, `time` = ?,`room` = ?, `name` = ? WHERE `id` = ?", sql_str_written_escape_arr, function(err, rows_sql_updated, fields_func){
                         if(err) throw err;
                         console.log(this.sql);
                     });
@@ -774,9 +766,9 @@ function start(){
     });
 }
 
-//DeleteFromDb is the last asynchrnous function called before respond
-//Due to the asynchrnous problem
-function DeleteFromDb(rows_origin, rows_orgin_marker, changes, fields, res)
+//DeleteFromDb is the last asynchronous function called before respond
+//Due to the asynchronous problem
+function DeleteFromDb(rows_origin, rows_origin_marker, changes, fields, res)
 {
     for(var ctr_clear = 0; ; ++ctr_clear)
     {
@@ -789,7 +781,7 @@ function DeleteFromDb(rows_origin, rows_orgin_marker, changes, fields, res)
             res.end(BuildHtmlResult(changes));
             return changes;
         }
-        if(rows_orgin_marker[ctr_clear]) continue;  //not the target
+        if(rows_origin_marker[ctr_clear]) continue;  //not the target
         //push into changed
         changes.min.push({
             date: rows_origin[ctr_clear].date.getFullYear() + "-" + (rows_origin[ctr_clear].date.getMonth() + 1) + "-" + rows_origin[ctr_clear].date.getDate(),
@@ -835,7 +827,6 @@ function ParseCheckbox_AdminForm(input, mode)
     for(var ctr_all = start_pt; ctr_all < input.length; ++ctr_all)
     {
         var temp = [];
-        var now = getnow();
         var FirstDayOfWeek = getFirstDayOfWeek();
         var date_temp = FirstDayOfWeek;
         date_temp.setHours(0, 0, 0, 0); //need to set hour to 0, 0, 0, 0 since sometimes we would use date comparison operator
@@ -944,12 +935,12 @@ function BuildHtmlResult(array_obj)
     //deletion part
     if(array_obj.min.length !== 0)
     {
-        body += "刪除的有:\n"
+        body += "刪除的有:\n";
         body += draw(array_obj.min);
     }
     if(array_obj.error.length !== 0)
     {
-        body += "錯誤的有(你動作太慢這格被別人搶走了QQ):\n"
+        body += "錯誤的有(你動作太慢這格被別人搶走了QQ):\n";
         body += draw(array_obj.err);
     }
     body += redirect_2_front_page;
@@ -974,7 +965,7 @@ function change_html_path(target)
     //!!Restricted to index.html and fail.html only
     var file = "";
     if(target === 'index.html') file = path.join(__dirname, '..', target);
-    else file = path.join(__dirname, '..', 'Front_End', target)
+    else file = path.join(__dirname, '..', 'Front_End', target);
     //reference: http://stackoverflow.com/questions/14177087/replace-a-string-in-a-file-with-nodejs
     fs.readFile(file, 'utf8', function(err, data){
         if(err) throw err;
