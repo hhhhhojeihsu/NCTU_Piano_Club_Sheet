@@ -525,7 +525,7 @@ function start(){
             //since data sent from html page is sorted by time, date, room
             //re-sort it by date, time, room
             query.sort(function(a, b){
-                sortby_dtm(a, b);
+                return sortby_dtm(a, b);
             });
             var query_origin_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate();
             var query_origin_name = fields[0];
@@ -678,7 +678,7 @@ function start(){
             }
             //sort by date, time, name
             fields_parse_date.sort(function(a, b){
-                sortby_dtm(a, b);
+                return sortby_dtm(a, b);
             });
             //initialize marker
             for(var ctr_ini = 0; ctr_ini < fields_parse_date.length; ++ctr_ini)
@@ -725,7 +725,6 @@ function start(){
                     }
                 }
 
-                //TODO: fields_parse_date sorting error
                 //deletion
                 marker_old.forEach(function(element, index, array){
                     if(!element) return true;
