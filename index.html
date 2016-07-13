@@ -8,6 +8,7 @@
     <link rel="stylesheet" type="text/css" href="http://nodejs-wwwworkspace.rhcloud.com/Style.css">
     <!--    include jquery   -->
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.3/jquery.min.js"></script>
+    <script type="text/javascript" src="http://localhost:8888/fb.js"></script>
     <!--    core javascript
     <script type="text/javascript" src="core.js"></script>
     -->
@@ -18,6 +19,10 @@
 <!--    bulletin board  -->
 <a target="_blank" href="https://www.facebook.com/groups/nctu.piano/"><img title="交通大學鋼琴社FB粉專"  src="https://scontent-tpe1-1.xx.fbcdn.net/t31.0-8/1074100_833220246788694_7782108442904618800_o.jpg"></a>
 <br>
+
+<fb:login-button scope="public_profile" data-max-rows="2" data-auto-logout-link="true" data-size="xlarge" show_faces="true"  onlogin="checkLoginState();">
+</fb:login-button>
+
 <!--    end of bulletin board   -->
 <!--    input box   -->
 <div id="login_area" class="div_centered login">
