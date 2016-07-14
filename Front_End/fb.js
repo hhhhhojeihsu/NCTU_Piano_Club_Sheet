@@ -112,15 +112,15 @@ function showAdmin()
 function LoginSuccess()
 {
     FB.api('/me', function(res){
-        document.getElementById('fb-btn').style.display = "none";
-        document.getElementById('status').innerHTML = "<button class='btn btn-primary btn-large btn-block' onclick='successAPI()' type='button'>以 " + res.name + " 的身分繼續</button>" + "<div id='not_me'><a onclick='showLogInOut()' style='font-size: x-small'>(這不是我!!)</a></div>";
+        if(window.location.href.indexOf("process_user") === -1) document.getElementById('fb-btn').style.display = "none";
+        if(document.getElementById('status')) document.getElementById('status').innerHTML = "<button class='btn btn-primary btn-large btn-block' onclick='successAPI()' type='button'>以 " + res.name + " 的身分繼續</button>" + "<div id='not_me'><a onclick='showLogIn()' style='font-size: x-small'>(這不是我!!)</a></div>";
     });
 }
 
-function showLogInOut()
+function showLogIn()
 {
     document.getElementById('fb-btn').style.display = "block";
-    document.getElementById('not_me').style.display = "none";
+    if(document.getElementById('not_me')) document.getElementById('not_me').style.display = "none";
 }
 
 function InitialState()

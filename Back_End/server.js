@@ -924,7 +924,7 @@ function BuildHtmlResult(array_obj)
     head += "<meta charset='UTF-8'>";
     head += "<title>交通大學鋼琴社琴房預約系統</title>";
     head += "<link rel='stylesheet' type='text/css' href='http://nodejs-wwwworkspace.rhcloud.com/Style_user.css'>";
-
+    head += "<script type='text/javascript' src='" + ip_address_re_ + "fb.js'></script>";
 
     /*  body    */
     //show the changes
@@ -953,6 +953,9 @@ function BuildHtmlResult(array_obj)
     }
     body += "<br>";
     body += redirect_2_front_page;
+    body += "或";
+    body += "<br>";
+    body += "<div id='fb-btn'><fb:login-button scope='public_profile' data-auto-logout-link='true' data-size='xlarge' onlogin='LogOut_prep();'></fb:login-button></div>";
     return "<!DOCTYPE html>\n<html lang='zh-Hant'>" +  "<head>" + head + "</head>" + "<body>" + body + "</body>" + "<footer>" + footer + "</footer>" + "</html>";
 }
 
