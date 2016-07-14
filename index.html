@@ -6,12 +6,7 @@
     <title>交通大學鋼琴社琴房預約系統</title>
     <link rel="icon" href="http://nodejs-wwwworkspace.rhcloud.com/Material/piano_icon.png">
     <link rel="stylesheet" type="text/css" href="http://nodejs-wwwworkspace.rhcloud.com/Style.css">
-    <!--    include jquery   -->
-    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.3/jquery.min.js"></script>
     <script type="text/javascript" src="http://localhost:8888/fb.js"></script>
-    <!--    core javascript
-    <script type="text/javascript" src="core.js"></script>
-    -->
 </head>
 
 <body>
@@ -20,30 +15,31 @@
 <a target="_blank" href="https://www.facebook.com/groups/nctu.piano/"><img title="交通大學鋼琴社FB粉專"  src="https://scontent-tpe1-1.xx.fbcdn.net/t31.0-8/1074100_833220246788694_7782108442904618800_o.jpg"></a>
 <br>
 
-<fb:login-button scope="public_profile" data-max-rows="2" data-auto-logout-link="true" data-size="xlarge" show_faces="true"  onlogin="checkLoginState();">
-</fb:login-button>
 
 <!--    end of bulletin board   -->
 <!--    input box   -->
 <div id="login_area" class="div_centered login">
 <div class="login-screen">
-    <div class="app-title">
-        <h1>登入</h1>
-    </div>
 <div class="login-form">
-<form action="http://nodejs-wwwworkspace.rhcloud.com/process" method="POST" enctype="multipart/form-data" name="user_input" id="login_guest">
-    <fieldset>
-        <label for="user_id"></label>
-    <input type="text" class="login-field" id="user_id" name="user_id" placeholder="帳號請至鋼琴社FB觀看" required>
-    <br>
-        <label for="user_pass"></label>
-    <input type="password" class="login-field" name="user_pass" id="user_pass" placeholder="密碼請至鋼琴社FB觀看" required>
-    <br>
-        <label for="user_name"></label>
-    <input type="text" class="login-field" id="user_name" name="user_name" placeholder="欲登記之姓名" required>
-    <input class="btn btn-primary btn-large btn-block" type="submit" value="送出">
-    </fieldset>
-</form>
+    <div id="fb-btn"><fb:login-button scope="public_profile" data-max-rows="2" data-auto-logout-link="true" data-size="xlarge" show_faces="true" onlogin="checkLoginState();"></fb:login-button></div>
+    <p class="line-beside-text"><span>或是</span></p>
+    <label for="show">
+        <span>以管理員登入</span>
+    </label>
+    <input type=radio id="show" name="group">
+    <form action="http://localhost:8888/process" method="POST" enctype="multipart/form-data" name="user_input" id="login_guest">
+        <fieldset>
+            <label for="user_id"></label>
+        <input type="text" class="login-field" id="user_id" name="user_id" placeholder="帳號請至鋼琴社FB觀看" required>
+        <br>
+            <label for="user_pass"></label>
+        <input type="password" class="login-field" name="user_pass" id="user_pass" placeholder="密碼請至鋼琴社FB觀看" required>
+        <br>
+            <label for="user_name"></label>
+        <input type="text" class="login-field" id="user_name" name="user_name" placeholder="欲登記之姓名" required>
+        <input class="btn btn-primary btn-large btn-block" type="submit" value="送出">
+        </fieldset>
+    </form>
 </div>
 </div>
 </div>

@@ -119,3 +119,41 @@ input:focus
     background-color: #2980B9;
 }
 
+
+#fb-btn
+{
+    margin-bottom: 10px;
+}
+
+/*  reference: http://stackoverflow.com/questions/5214127/css-technique-for-a-horizontal-line-with-words-in-the-middle  */
+.line-beside-text
+{
+    width: 100%;
+    text-align: center;
+    border-bottom: 1px solid #000;
+    line-height: 0.1em;
+    margin: 10px 0 20px;
+}
+
+.line-beside-text span
+{
+    background: #ffffff;
+    padding: 0 10px;
+}
+
+
+/*  reference: http://stackoverflow.com/a/17731854/6007708  */
+#show
+{
+    display: none;
+}
+
+#login_guest
+{
+    display: none;
+}
+
+input#show:checked ~ #login_guest
+{
+    display: block;
+}
