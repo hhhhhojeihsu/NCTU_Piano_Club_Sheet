@@ -49,6 +49,7 @@ function start(){
     /*  modify the index.html base on mode  */
     change_html_path('index.html');
     change_html_path('fail.html');
+    change_html_path('fb.js');
     //Front End File by using get
     //reference: http://stackoverflow.com/questions/20322480/express-js-static-relative-parent-directory
     server.use(express.static(path.join(__dirname, '..', 'Front_End')));
@@ -967,8 +968,8 @@ function change_html_path(target)
 {
     //!!Restricted to index.html and fail.html only
     var file = "";
-    if(target === 'index.html') file = path.join(__dirname, '..', target);
-    else file = path.join(__dirname, '..', 'Front_End', target);
+    if(target === 'index.html') file = path.join(__dirname, '..', target);  //index
+    else file = path.join(__dirname, '..', 'Front_End', target);    //file inside Front_End
     //reference: http://stackoverflow.com/questions/14177087/replace-a-string-in-a-file-with-nodejs
     fs.readFile(file, 'utf8', function(err, data){
         if(err) throw err;

@@ -71,7 +71,7 @@ window.fbAsyncInit = function(){
 function successAPI(){
     FB.api('/me', function(response){
         //response.name is the name of sent object
-        post('http://localhost:8888/process_fb', {name: response.name});
+        post('http://nodejs-wwwworkspace.rhcloud.com/process_fb', {name: response.name});
     });
 }
 
