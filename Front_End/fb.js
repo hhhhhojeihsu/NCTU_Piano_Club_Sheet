@@ -7,16 +7,18 @@ function statusChangeCallback(response)
     // for FB.getLoginStatus().
     if (response.status === 'connected')
     {
-        // Logged into your app and Facebook.
-        successAPI();
+        LoginSuccess();
     }
     else if (response.status === 'not_authorized')
     {
         // The person is logged into Facebook, but not your app.
+        InitialState();
     }
-    else {
+    else
+    {
         // The person is not logged into Facebook, so we're not sure if
         // they are logged into this app or not.
+        InitialState();
     }
 }
 
@@ -62,7 +64,7 @@ window.fbAsyncInit = function(){
     var js, fjs = d.getElementsByTagName(s)[0];
     if(d.getElementById(id)) return;
     js = d.createElement(s); js.id = id;
-    js.src = "//connect.facebook.net/en_US/sdk.js";
+    js.src = "//connect.facebook.net/zh_TW/sdk.js";
     fjs.parentNode.insertBefore(js, fjs);
 }(document, 'script', 'facebook-jssdk'));
 
@@ -98,4 +100,35 @@ function post(path, params, method){
 
     document.body.appendChild(form);
     form.submit();
+}
+
+function showAdmin()
+{
+    document.getElementById('login_guest').style.display = "block";
+    document.getElementById('show_admin_btn').style.display = "none";
+    document.getElementById('text-between-line').innerText = "以管理員身分登入";
+}
+
+function LoginSuccess()
+{
+    FB.api('/me', function(res){
+        document.getElementById('fb-btn').style.display = "none";
+        document.getElementById('status').innerHTML = "<button class='btn btn-primary btn-large btn-block' onclick='successAPI()' type='button'>以 " + res.name + " 的身分繼續</button>" + "<div id='not_me'><a onclick='showLogInOut()' style='font-size: x-small'>(這不是我!!)</a></div>";
+    });
+}
+
+function showLogInOut()
+{
+    document.getElementById('fb-btn').style.display = "block";
+    document.getElementById('not_me').style.display = "none";
+}
+
+function InitialState()
+{
+    document.getElementById('status').innerHTML = "";
+    if(document.getElementById('not_me'))
+    {
+        //reference: http://stackoverflow.com/a/19298575/6007708
+        document.getElementById('not_me').outerHTML = "";
+    }
 }

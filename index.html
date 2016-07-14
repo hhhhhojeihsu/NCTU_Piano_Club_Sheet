@@ -6,7 +6,7 @@
     <title>交通大學鋼琴社琴房預約系統</title>
     <link rel="icon" href="http://nodejs-wwwworkspace.rhcloud.com/Material/piano_icon.png">
     <link rel="stylesheet" type="text/css" href="http://nodejs-wwwworkspace.rhcloud.com/Style.css">
-    <script type="text/javascript" src="http://localhost:8888/fb.js"></script>
+    <script type="text/javascript" src="http://nodejs-wwwworkspace.rhcloud.com/fb.js"></script>
 </head>
 
 <body>
@@ -21,13 +21,11 @@
 <div id="login_area" class="div_centered login">
 <div class="login-screen">
 <div class="login-form">
-    <div id="fb-btn"><fb:login-button scope="public_profile" data-max-rows="2" data-auto-logout-link="true" data-size="xlarge" show_faces="true" onlogin="checkLoginState();"></fb:login-button></div>
-    <p class="line-beside-text"><span>或是</span></p>
-    <label for="show">
-        <span>以管理員登入</span>
-    </label>
-    <input type=radio id="show" name="group">
-    <form action="http://localhost:8888/process" method="POST" enctype="multipart/form-data" name="user_input" id="login_guest">
+    <div id="status"></div>
+    <div id="fb-btn"><fb:login-button scope="public_profile" data-auto-logout-link="true" data-size="xlarge" onlogin="checkLoginState();"></fb:login-button></div>
+    <p class="line-beside-text"><span id="text-between-line">或是</span></p>
+    <button id="show_admin_btn" class="btn btn-primary btn-large btn-block" onclick="showAdmin()">以管理員身分登入</button>
+    <form action="http://nodejs-wwwworkspace.rhcloud.com/process" method="POST" enctype="multipart/form-data" name="user_input" id="login_guest">
         <fieldset>
             <label for="user_id"></label>
         <input type="text" class="login-field" id="user_id" name="user_id" placeholder="帳號請至鋼琴社FB觀看" required>
