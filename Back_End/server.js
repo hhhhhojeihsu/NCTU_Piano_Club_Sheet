@@ -5,7 +5,6 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var fs = require('fs');
 var formidable = require("formidable");
-var util = require('util');
 var path = require("path");
 var sql = require('./sql');
 
@@ -79,6 +78,10 @@ function start(){
     //process data sent by administrator
     server.post('/process_admin', function(req, res){
         AdminQuery(req, res);
+    });
+
+    server.post('/process_fb', function(req, res){
+        console.log(req.body.name);
     });
 
     //reference: http://stackoverflow.com/a/6528951/6007708
