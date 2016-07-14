@@ -981,11 +981,13 @@ function change_html_path(target)
         if(mode_selection)    //openshift mode
         {
             result = data.replace(/localhost:8888/g, 'nodejs-wwwworkspace.rhcloud.com');
+            if(target === 'fb.js') result = data.replace(/140237553072177/g, '139264433169489');
             console.log(target + ' modify to openshift mode');
         }
         else
         {
             result = data.replace(/nodejs-wwwworkspace.rhcloud.com/g, 'localhost:8888');
+            if(target === 'fb.js') result = data.replace(/139264433169489/g, '140237553072177');
             console.log(target + ' modify to localhost mode');
         }
         fs.writeFile(file, result, function(err, data){
