@@ -951,6 +951,7 @@ function BuildHtmlResult(array_obj)
         body += "錯誤的有(你動作太慢這格被別人搶走了QQ):\n";
         body += draw(array_obj.err);
     }
+    body += "<br>";
     body += redirect_2_front_page;
     return "<!DOCTYPE html>\n<html lang='zh-Hant'>" +  "<head>" + head + "</head>" + "<body>" + body + "</body>" + "<footer>" + footer + "</footer>" + "</html>";
 }
@@ -975,19 +976,20 @@ function change_html_path(target)
     if(target === 'index.html') file = path.join(__dirname, '..', target);  //index
     else file = path.join(__dirname, '..', 'Front_End', target);    //file inside Front_End
     //reference: http://stackoverflow.com/questions/14177087/replace-a-string-in-a-file-with-nodejs
+    //inspired by : http://stackoverflow.com/questions/4285472/multiple-regex-replace
     fs.readFile(file, 'utf8', function(err, data){
         if(err) throw err;
         var result;
         if(mode_selection)    //openshift mode
         {
-            result = data.replace(/localhost:8888/g, 'nodejs-wwwworkspace.rhcloud.com');
-            if(target === 'fb.js') result = data.replace(/140237553072177/g, '139264433169489');
+            if(target === 'fb.js') result = data.replace(/140237553072177/g, '139264433169489').replace(/localhost:8888/g, 'nodejs-wwwworkspace.rhcloud.com');
+            else result = data.replace(/localhost:8888/g, 'nodejs-wwwworkspace.rhcloud.com');
             console.log(target + ' modify to openshift mode');
         }
         else
         {
-            result = data.replace(/nodejs-wwwworkspace.rhcloud.com/g, 'localhost:8888');
-            if(target === 'fb.js') result = data.replace(/139264433169489/g, '140237553072177');
+            if(target === 'fb.js') result = data.replace(/139264433169489/g, '140237553072177').replace(/nodejs-wwwworkspace.rhcloud.com/g, 'localhost:8888');
+            else result = data.replace(/nodejs-wwwworkspace.rhcloud.com/g, 'localhost:8888');
             console.log(target + ' modify to localhost mode');
         }
         fs.writeFile(file, result, function(err, data){
