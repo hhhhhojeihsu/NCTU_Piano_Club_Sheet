@@ -660,7 +660,7 @@ function start(){
             var marker_new = [];    //array used to record which field needs to insert into database
             var marker_update = []; //base on marker_new, used to see which field needs update instead of insert or delete
             var FirstDayOfWeek = getFirstDayOfWeek();
-            var query_esc_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
+            var query_esc_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate();
             /*  parse input by using function ParseCheckbox_AdminForm
                 since they share the same name for each field
              */
@@ -751,6 +751,16 @@ function start(){
                         if(err) throw err;
                         console.log(this.sql);
                     });
+                });
+
+                /*  delete entry that is older than 3 month(not very precise) */
+                var three_months_ago = getnow();
+                three_months_ago.setMonth(getnow().getMonth() - 3);
+                three_months_ago.setDate(1);    //prevent month that has 29, 30, or 31 days
+                var three_months_ago_str = three_months_ago.getFullYear() + '-' + (three_months_ago.getMonth() + 1) + '-' + three_months_ago.getDate();
+                sql.connection.query("DELETE FROM `schedule` WHERE `date` <= ?", three_months_ago_str, function(err, rows_query_del_before, fields_func){
+                    if (err) throw err;
+                    console.log(this.sql);
                 });
                 /*  tell the administrator that the process completed   */
                 res.writeHead(200, {
