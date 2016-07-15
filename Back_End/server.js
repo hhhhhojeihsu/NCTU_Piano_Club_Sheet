@@ -527,9 +527,7 @@ function start(){
             var query = ParseCheckbox_AdminForm(fields, 1);
             //since data sent from html page is sorted by time, date, room
             //re-sort it by date, time, room
-            query.sort(function(a, b){
-                return sortby_dtm(a, b);
-            });
+            query.sort(sortby_dtm);
             var query_origin_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate();
             var query_origin_name = fields[0];
             //reference: http://stackoverflow.com/questions/750486/javascript-closure-inside-loops-simple-practical-example
@@ -679,9 +677,7 @@ function start(){
                 fields_parse_date[ctr_fields_cp][3] = fields[ctr_fields_cp][1];
             }
             //sort by date, time, name
-            fields_parse_date.sort(function(a, b){
-                return sortby_dtm(a, b);
-            });
+            fields_parse_date.sort(sortby_dtm);
             //initialize marker
             for(var ctr_ini = 0; ctr_ini < fields_parse_date.length; ++ctr_ini)
             {
@@ -1018,13 +1014,13 @@ function getFirstDayOfWeek()
 //re-sort it by date, time, room
 function sortby_dtm(a, b)
 {
-    if(a[0] > b[0]) return 1;
-    else if(a[0] === b[0])
+    if(a[0].getTime() > b[0].getTime()) return 1;
+    else if(a[0].getTime()  === b[0].getTime())
     {
-        if(a[1] > b[1]) return 1;
-        else if(a[1] === b[1])
+        if(Number(a[1]) > Number(b[1])) return 1;
+        else if(Number(a[1]) === Number(b[1]))
         {
-            if(a[2] > b[2]) return 1;
+            if(Number(a[2]) > Number(b[2])) return 1;
             else return -1;
         }
         else return -1;
