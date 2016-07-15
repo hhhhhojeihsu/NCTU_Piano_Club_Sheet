@@ -116,7 +116,7 @@ function start(){
                     //detect user
                     if (rows[counter].user_name === user_name && rows[counter].user_password === user_pass)
                     {
-                        console.log("Users: " + rows[counter].user_name + " with Pass: " + rows[counter].user_password + " activity detected");
+                        console.log("Users: " + rows[counter].user_name + " with Pass: " + rows[counter].user_password + " activity detected at: " + getnow());
                         break;
                     }
                 }
@@ -129,7 +129,7 @@ function start(){
                 /*  login failed    */
                 else
                 {
-                    console.log("Attempt failed with User: " + user_name + " Pass: " + user_pass + " detected");
+                    console.log("Attempt failed with User: " + user_name + " Pass: " + user_pass + " detected at: " + getnow());
                     //reference: http://stackoverflow.com/questions/17341122/link-and-execute-external-javascript-file-hosted-on-github
                     res.redirect(ip_address_re_ + "fail.html");
                     res.end();
@@ -305,12 +305,12 @@ function start(){
             /*  no record found  */
             if(rows.length == 0)
             {
-                console.log(user_id + " access system with no record found");
+                console.log(user_id + " access system with no record found at : " + getnow());
                 body += "您目前並沒有登記任何時段<br>";
             }
             else    //show booked in a table
             {
-                console.log(user_id + " access system with " + rows.length + " record found");
+                console.log(user_id + " access system with " + rows.length + " record found at : " + getnow());
                 body += "您目前登記的有: <br><br>";
                 /*  booked  */
                 body += "<div id='booked'>";
