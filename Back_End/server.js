@@ -153,6 +153,7 @@ function start(){
             var head = '';
             var body = '';
             head += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
+            head += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
             head += "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css' integrity='sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7' crossorigin='anonymous'>";
             head += "<link rel='stylesheet' type='text/css' href='" + ip_address_re_ + "Style_user.css'>";
             head += "<script type='text/javascript' src='" + ip_address_re_ + "form_valid.js'></script>";
@@ -256,6 +257,7 @@ function start(){
             var ctr_selected = 0;   //pointer to current user name's record on database
             var ctr_oth_not_selected = 0;   //pointer to other user's appointment on database
             head += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
+            head += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
             head += "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css' integrity='sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7' crossorigin='anonymous'>";
             head += "<link rel='stylesheet' type='text/css' href='" + ip_address_re_ + "Style_user.css'>";
             head += "<script type='text/javascript' src='" + ip_address_re_ + "form_valid.js'></script>";
@@ -792,6 +794,7 @@ function BuildAdminResult()
     var body = "";
     var footer = "";
     head += "<meta charset='UTF-8'>";
+    head += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
     head += "<meta http-equiv='refresh' content='3;url=" + ip_address_re_ + "'>";
     body += "所有變動都已儲存，網頁將在3秒鐘後自動導向至首頁。";
     body += redirect_2_front_page;
@@ -848,6 +851,7 @@ function BuildHtmlResult(array_obj)
     }
 
     /*  head    */
+    head += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
     head += "<meta charset='UTF-8'>";
     head += "<title>交通大學鋼琴社琴房預約系統</title>";
     head += "<link rel='stylesheet' type='text/css' href='http://nodejs-wwwworkspace.rhcloud.com/Style_user.css'>";
@@ -889,6 +893,7 @@ function BuildNameError()
 {
     var head = "";
     head += "<meta charset='UTF-8'>";
+    head += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
     head += "<meta http-equiv='refresh' content='3;url=" + ip_address_re_ + "'>";
     var body = "";
     var footer = "";

@@ -85,12 +85,12 @@ reference: http://stackoverflow.com/questions/114543/horizontally-center-a-div-i
 .login
 {
     margin: 20px auto;
-    width: 300px;
+    width: 220px;
 }
 .login-screen
 {
     background-color: #ffffff;
-    padding: 20px;
+    padding: 20px 5px 20px 5px;
     border-radius: 5px
 }
 
@@ -105,6 +105,11 @@ reference: http://stackoverflow.com/questions/114543/horizontally-center-a-div-i
     text-align: center;
 }
 
+fieldset
+{
+    padding: 2px;
+}
+
 input
 {
     text-align: center;
@@ -114,7 +119,7 @@ input
     font-size: 16px;
     font-weight: 200;
     padding: 10px 0;
-    width: 250px;
+    width: 200px;
     transition: border .5s;
 }
 
@@ -138,7 +143,7 @@ input:focus
     box-shadow: none;
     transition: 0.25s;
     display: block;
-    width: 250px;
+    width: 200px;
     margin: 0 auto;
 }
 
