@@ -156,57 +156,15 @@ function start(){
             head += "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css' integrity='sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7' crossorigin='anonymous'>";
             head += "<link rel='stylesheet' type='text/css' href='" + ip_address_re_ + "Style_user.css'>";
             head += "<script type='text/javascript' src='" + ip_address_re_ + "form_valid.js'></script>";
-            body += "你現在在Administrator模式，可以任意更改與觀看本周所有的資料。'除非必要不然不應任意更改'。<br>預設也會檢驗填入資料，若有需要保留琴房供特殊使用且超出預設限制，請換一個名字填入表格";
+            body += "你現在在Administrator模式，可以任意更改與觀看本周所有的資料。'除非必要不然不應任意更改'。<br>預設也會檢驗填入資料，若有需要保留琴房供特殊使用且超出預設限制，請換一個名字填入表格<br>每週最多八個時段 每天最多三個時段";
             var arr_pos = 0;    //pointer point to which field to be print
             /*  generating table    */
+            body += "<div id='select_menu'>";
             body += "<table class='table1'>";
             body += "<form action='" + ip_address_re_ + "process_admin' onsubmit='return validateForm_admin()' method='POST' enctype='multipart/form-data' name='admin_form' id='admin_form'>";    //data is sent to process_admin
-            body += "<thead>";
-            body += "<tr><td colspan='15'>每週最多八個時段 每天最多三個時段</td></tr>";
-            body += "<tr>";
-            body += "<td></td>";
-            /*  7 days in total */
-            for(var ctr_day = 0; ctr_day < 7; ++ctr_day)
-            {
-                body += "<th colspan='2'>";
-                //prevent cross month problem
-                if (FirstDayOfWeek.getDate() + ctr_day > days_this_mon)
-                {
-                    //cross year
-                    body += FirstDayOfWeek.getMonth() + 2 !== 13 ? FirstDayOfWeek.getMonth() + 2 : 1;
-                    body += "/";
-                    body += (FirstDayOfWeek.getDate() + ctr_day) - days_this_mon;
-                }
-                else
-                {
-                    body += FirstDayOfWeek.getMonth() + 1;
-                    body += "/";
-                    body += FirstDayOfWeek.getDate() + ctr_day;
-                }
-                //days
-                body += " (";
-                body += day_cht.substring(ctr_day, ctr_day + 1);
-                body += ")";
-                body += "</th>";
-            }
-            body += "</tr>";
-
-            /*  generating room number  */
-            body += "<tr>";
-            body += "<td></td>";
-            for(var ctr_room = 0; ctr_room < 7; ++ctr_room)
-            {
-                body += "<th>";
-                body += "409";
-                body += "</th>";
-                body += "<th>";
-                body += "417";
-                body += "</th>";
-            }
-            body += "</tr>";
-            body += "</thead>";
+            body += GenerateLabel(FirstDayOfWeek, days_this_mon, 1);
             body += "<tfoot>";
-            body += "<tr><td><input class='btn btn-primary' type='submit' value='送出'></td>";
+            body += "<tr><td><input class='btn btn-primary' type='submit' value='送出'></td></tr>";
             body += "</tfoot>";
             body += "<tbody>";
             /*  generating each hour row by row */
@@ -226,7 +184,7 @@ function start(){
                 body += "</td>";
                 /*  generating input field  */
                 //TODO: USE 7 DAYS 2 ROOM INSTEAD OF 14 DAYS AND PARSING
-                for(ctr_day = 0; ctr_day < 14; ++ctr_day)
+                for(var ctr_day = 0; ctr_day < 14; ++ctr_day)
                 {
                     //reference: http://stackoverflow.com/questions/6609574/javascript-date-variable-assignment
                     var date_obj = new Date(FirstDayOfWeek);
@@ -254,9 +212,10 @@ function start(){
                 body += "</tr>";
             }
             body += "</tbody>";
-            body += "</tr>";
+            body += GenerateLabel(FirstDayOfWeek, days_this_mon, 0);
             body += "</form>";
             body += "</table>";
+            body += "</div>";
 
             /*  print out the page  */
             html = '<!DOCTYPE html><html lang="zh-Hant">' + '<html><head>' + head + '</head><body>' + body + '</body></html>';
@@ -324,10 +283,10 @@ function start(){
                     body += "<tr>";
                     /*  date    */
                     body += "<td>";
-                    body += rows[ctr].date.getFullYear() + "年 ";
-                    body += (rows[ctr].date.getMonth() + 1).pad() + "月 ";
-                    body += rows[ctr].date.getDate().pad() + "號 禮拜";
-                    body += day_cht.substring(rows[ctr].date.getDay(), rows[ctr].date.getDay() + 1);
+                    body += (rows[ctr].date.getMonth() + 1).pad();
+                    body += "/";
+                    body += rows[ctr].date.getDate().pad();
+                    body += " (" + day_cht.substring(rows[ctr].date.getDay(), rows[ctr].date.getDay() + 1) + ")";
                     body += "</td>";
                     /*  time    */
                     body += "<td>";
@@ -354,6 +313,7 @@ function start(){
             }
 
             body += "<br>";
+            body += "每週最多八個時段 每天最多三個時段 417是較靠社辦的那間";
 
             /*  get all data this week except the user himself  */
             //the array is sort by time, date then room
@@ -382,47 +342,7 @@ function start(){
                 body += "<input style='display: none;' type='text' id='hid_user' name='hid_user' value='";
                 body += user_id;
                 body += "' required >";
-                body += "<thead>";
-                body += "<tr><td colspan='15'>每週最多八個時段 每天最多三個時段</td></tr>";
-                body += "<tr>";
-                body += "<td style='border-bottom: 0'></td>";
-                /*  generate date label */
-                for(var ctr_day = 0; ctr_day < 7; ++ctr_day)
-                {
-                    body += "<th colspan='2'>";
-                    if (FirstDayOfWeek.getDate() + ctr_day > days_this_mon)
-                    {
-                        body += FirstDayOfWeek.getMonth() + 2 !== 13 ? FirstDayOfWeek.getMonth() + 2 : 1;
-                        body += "/";
-                        body += (FirstDayOfWeek.getDate() + ctr_day) - days_this_mon;
-                    }
-                    else
-                    {
-                        body += FirstDayOfWeek.getMonth() + 1;
-                        body += "/";
-                        body += FirstDayOfWeek.getDate() + ctr_day;
-                    }
-                    body += " (";
-                    body += day_cht.substring(ctr_day, ctr_day + 1);
-                    body += ")";
-                    body += "</th>";
-                }
-                body += "</tr>";
-
-                body += "<tr>";
-                body += "<td style='border-top: 0'></td>";
-                /*  generate room label */
-                for(var ctr_room = 0; ctr_room < 7; ++ctr_room)
-                {
-                    body += "<th>";
-                    body += "409";
-                    body += "</th>";
-                    body += "<th>";
-                    body += "417";
-                    body += "</th>";
-                }
-                body += "</tr>";
-                body += "</thead>";
+                body += GenerateLabel(FirstDayOfWeek, days_this_mon, 1);
                 body += "<tfoot>";
                 body += "<tr>" +
                     "<td><input class='btn btn-primary' type='submit' value='送出'></td>";
@@ -450,7 +370,7 @@ function start(){
                     body += ":00";
                     body += "</th>";
                     /*  for each check box  */
-                    for(ctr_day = 0; ctr_day < 14; ++ctr_day)
+                    for(var ctr_day = 0; ctr_day < 14; ++ctr_day)
                     {
                         var date_obj = new Date(FirstDayOfWeek);
                         date_obj.setDate(FirstDayOfWeek.getDate() + Math.floor(ctr_day / 2));
@@ -491,6 +411,7 @@ function start(){
                     body += "</tr>";
                 }
                 body += "</tbody>";
+                body += GenerateLabel(FirstDayOfWeek, days_this_mon, 0);
                 body += "</form>";
                 body += "</table>";
                 body += "</div>";
@@ -960,8 +881,7 @@ function BuildHtmlResult(array_obj)
     body += "<br>";
     body += redirect_2_front_page;
     body += "或";
-    body += "<br>";
-    body += "<div id='fb-btn'><fb:login-button scope='public_profile' data-auto-logout-link='true' data-size='xlarge' onlogin='LogOut_prep();'></fb:login-button></div>";
+    body += "<div style='display: inline-block' id='fb-btn'><fb:login-button scope='public_profile' data-auto-logout-link='true' data-size='large' onlogin='LogOut_prep();'></fb:login-button></div>";
     return "<!DOCTYPE html>\n<html lang='zh-Hant'>" +  "<head>" + head + "</head>" + "<body>" + body + "</body>" + "<footer>" + footer + "</footer>" + "</html>";
 }
 
@@ -1036,6 +956,69 @@ function sortby_dtm(a, b)
         else return -1;
     }
     else return -1;
+}
+
+function GenerateLabel(FirstDayOfWeek, days_this_mon, mode)
+{
+    var body = "";
+    function time_label(FirstDayOfWeek, days_this_mon)
+    {
+        body += "<tr>";
+        body += "<td></td>";
+        /*  generate date label */
+        for(var ctr_day = 0; ctr_day < 7; ++ctr_day)
+        {
+            body += "<th colspan='2'>";
+            if (FirstDayOfWeek.getDate() + ctr_day > days_this_mon)
+            {
+                body += FirstDayOfWeek.getMonth() + 2 !== 13 ? FirstDayOfWeek.getMonth() + 2 : 1;
+                body += "/";
+                body += (FirstDayOfWeek.getDate() + ctr_day) - days_this_mon;
+            }
+            else
+            {
+                body += FirstDayOfWeek.getMonth() + 1;
+                body += "/";
+                body += FirstDayOfWeek.getDate() + ctr_day;
+            }
+            body += " (";
+            body += day_cht.substring(ctr_day, ctr_day + 1);
+            body += ")";
+            body += "</th>";
+        }
+        body += "</tr>";
+    }
+
+    function room_label()
+    {
+        body += "<tr>";
+        body += "<td></td>";
+        /*  generate room label */
+        for(var ctr_room = 0; ctr_room < 7; ++ctr_room)
+        {
+            body += "<th>";
+            body += "409";
+            body += "</th>";
+            body += "<th>";
+            body += "417";
+            body += "</th>";
+        }
+        body += "</tr>";
+    }
+
+    if(mode)    //mode === 1 for upper label
+    {
+        time_label(FirstDayOfWeek, days_this_mon);
+        room_label();
+        return "<thead>" + body + "</thead>";
+    }
+    else    //lower label
+    {
+        room_label();
+        time_label(FirstDayOfWeek, days_this_mon);
+        return "<thead id='bottom'>" + body + "</thead>";
+    }
+
 }
 
 
