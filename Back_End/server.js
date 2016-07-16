@@ -153,6 +153,7 @@ function start(){
             var head = '';
             var body = '';
             head += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
+            head += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
             head += "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css' integrity='sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7' crossorigin='anonymous'>";
             head += "<link rel='stylesheet' type='text/css' href='" + ip_address_re_ + "Style_user.css'>";
             head += "<script type='text/javascript' src='" + ip_address_re_ + "form_valid.js'></script>";
@@ -173,15 +174,7 @@ function start(){
                 body += "<tr>";
                 /*  fixed time  */
                 //TODO: USE PADDING NUMBER FUNCTION INSTEAD OF STATEMENT
-                body += "<td>";
-                if(ctr_hr < 10) body += "0";
-                body += ctr_hr;
-                body += ":00 ~ ";
-                if(ctr_hr + 1 < 10) body += "0";
-                if(ctr_hr + 1 == 24) body += "00";
-                else body += (ctr_hr + 1);
-                body += ":00";
-                body += "</td>";
+                body += GenerateTimeLabel(ctr_hr, 0);
                 /*  generating input field  */
                 //TODO: USE 7 DAYS 2 ROOM INSTEAD OF 14 DAYS AND PARSING
                 for(var ctr_day = 0; ctr_day < 14; ++ctr_day)
@@ -209,6 +202,7 @@ function start(){
                     body += ">";
                     body += "</td>";
                 }
+                body += GenerateTimeLabel(ctr_hr, 1);
                 body += "</tr>";
             }
             body += "</tbody>";
@@ -256,6 +250,7 @@ function start(){
             var ctr_selected = 0;   //pointer to current user name's record on database
             var ctr_oth_not_selected = 0;   //pointer to other user's appointment on database
             head += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
+            head += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
             head += "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css' integrity='sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7' crossorigin='anonymous'>";
             head += "<link rel='stylesheet' type='text/css' href='" + ip_address_re_ + "Style_user.css'>";
             head += "<script type='text/javascript' src='" + ip_address_re_ + "form_valid.js'></script>";
@@ -335,7 +330,7 @@ function start(){
                     else return -1;
                 });
                 /*  point to the selectable form for user   */
-                body += "<div id='select_menu'>";
+                body += "<div id='select_menu' class='table-responsive'>";
                 body += "<table class='table1'>";
                 body += "<form action='" + ip_address_re_ + "process_user' onsubmit='return validateForm_user()' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";  //collected data is sent to process_user
                 //create a hidden input box that stored user name passed from the main page
@@ -358,17 +353,8 @@ function start(){
                 /*  generating table    */
                 for(var ctr_hr = 0; ctr_hr <= 23; ++ctr_hr)
                 {
-                    /*  time label  */
                     body += "<tr>";
-                    body += "<th>";
-                    if(ctr_hr < 10) body += "0";
-                    body += ctr_hr;
-                    body += ":00 ~ ";
-                    if(ctr_hr + 1 < 10) body += "0";
-                    if(ctr_hr + 1 == 24) body += "00";
-                    else body += (ctr_hr + 1);
-                    body += ":00";
-                    body += "</th>";
+                    body += GenerateTimeLabel(ctr_hr, 0);
                     /*  for each check box  */
                     for(var ctr_day = 0; ctr_day < 14; ++ctr_day)
                     {
@@ -408,6 +394,7 @@ function start(){
                         else ++ctr_oth_not_selected;
                         body += "</td>";
                     }
+                    body += GenerateTimeLabel(ctr_hr, 1);
                     body += "</tr>";
                 }
                 body += "</tbody>";
@@ -792,6 +779,7 @@ function BuildAdminResult()
     var body = "";
     var footer = "";
     head += "<meta charset='UTF-8'>";
+    head += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
     head += "<meta http-equiv='refresh' content='3;url=" + ip_address_re_ + "'>";
     body += "所有變動都已儲存，網頁將在3秒鐘後自動導向至首頁。";
     body += redirect_2_front_page;
@@ -848,6 +836,7 @@ function BuildHtmlResult(array_obj)
     }
 
     /*  head    */
+    head += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
     head += "<meta charset='UTF-8'>";
     head += "<title>交通大學鋼琴社琴房預約系統</title>";
     head += "<link rel='stylesheet' type='text/css' href='http://nodejs-wwwworkspace.rhcloud.com/Style_user.css'>";
@@ -889,6 +878,7 @@ function BuildNameError()
 {
     var head = "";
     head += "<meta charset='UTF-8'>";
+    head += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
     head += "<meta http-equiv='refresh' content='3;url=" + ip_address_re_ + "'>";
     var body = "";
     var footer = "";
@@ -1019,6 +1009,23 @@ function GenerateLabel(FirstDayOfWeek, days_this_mon, mode)
         return "<thead id='bottom'>" + body + "</thead>";
     }
 
+}
+
+//mode 0 for top, mode 1 for bottom
+function GenerateTimeLabel(ctr_hr, mode)
+{
+    var body = "";
+    /*  time label  */
+    body += mode ? "<th class = 'th_bottom'>" : "<th>";
+    if(ctr_hr < 10) body += "0";
+    body += ctr_hr;
+    body += ":00 ~ ";
+    if(ctr_hr + 1 < 10) body += "0";
+    if(ctr_hr + 1 == 24) body += "00";
+    else body += (ctr_hr + 1);
+    body += ":00";
+    body += "</th>";
+    return body;
 }
 
 
