@@ -174,15 +174,7 @@ function start(){
                 body += "<tr>";
                 /*  fixed time  */
                 //TODO: USE PADDING NUMBER FUNCTION INSTEAD OF STATEMENT
-                body += "<td>";
-                if(ctr_hr < 10) body += "0";
-                body += ctr_hr;
-                body += ":00 ~ ";
-                if(ctr_hr + 1 < 10) body += "0";
-                if(ctr_hr + 1 == 24) body += "00";
-                else body += (ctr_hr + 1);
-                body += ":00";
-                body += "</td>";
+                body += GenerateTimeLabel(ctr_hr, 0);
                 /*  generating input field  */
                 //TODO: USE 7 DAYS 2 ROOM INSTEAD OF 14 DAYS AND PARSING
                 for(var ctr_day = 0; ctr_day < 14; ++ctr_day)
@@ -210,6 +202,7 @@ function start(){
                     body += ">";
                     body += "</td>";
                 }
+                body += GenerateTimeLabel(ctr_hr, 1);
                 body += "</tr>";
             }
             body += "</tbody>";
@@ -337,7 +330,7 @@ function start(){
                     else return -1;
                 });
                 /*  point to the selectable form for user   */
-                body += "<div id='select_menu'>";
+                body += "<div id='select_menu' class='table-responsive'>";
                 body += "<table class='table1'>";
                 body += "<form action='" + ip_address_re_ + "process_user' onsubmit='return validateForm_user()' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";  //collected data is sent to process_user
                 //create a hidden input box that stored user name passed from the main page
@@ -360,17 +353,8 @@ function start(){
                 /*  generating table    */
                 for(var ctr_hr = 0; ctr_hr <= 23; ++ctr_hr)
                 {
-                    /*  time label  */
                     body += "<tr>";
-                    body += "<th>";
-                    if(ctr_hr < 10) body += "0";
-                    body += ctr_hr;
-                    body += ":00 ~ ";
-                    if(ctr_hr + 1 < 10) body += "0";
-                    if(ctr_hr + 1 == 24) body += "00";
-                    else body += (ctr_hr + 1);
-                    body += ":00";
-                    body += "</th>";
+                    body += GenerateTimeLabel(ctr_hr, 0);
                     /*  for each check box  */
                     for(var ctr_day = 0; ctr_day < 14; ++ctr_day)
                     {
@@ -410,6 +394,7 @@ function start(){
                         else ++ctr_oth_not_selected;
                         body += "</td>";
                     }
+                    body += GenerateTimeLabel(ctr_hr, 1);
                     body += "</tr>";
                 }
                 body += "</tbody>";
@@ -1024,6 +1009,23 @@ function GenerateLabel(FirstDayOfWeek, days_this_mon, mode)
         return "<thead id='bottom'>" + body + "</thead>";
     }
 
+}
+
+//mode 0 for top, mode 1 for bottom
+function GenerateTimeLabel(ctr_hr, mode)
+{
+    var body = "";
+    /*  time label  */
+    body += mode ? "<th class = 'th_bottom'>" : "<th>";
+    if(ctr_hr < 10) body += "0";
+    body += ctr_hr;
+    body += ":00 ~ ";
+    if(ctr_hr + 1 < 10) body += "0";
+    if(ctr_hr + 1 == 24) body += "00";
+    else body += (ctr_hr + 1);
+    body += ":00";
+    body += "</th>";
+    return body;
 }
 
 

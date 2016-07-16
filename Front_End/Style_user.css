@@ -99,6 +99,17 @@ table.table1{
     border-top-left-radius:5px;
     border-bottom-left-radius:5px;
 }
+
+.th_bottom
+{
+    border-right:1px solid #93CE37;
+    border-left:3px solid #9ED929;
+    padding:0 5px;
+    -moz-border-radius: 0 5px 5px 0 !important;
+    -webkit-border-radius: 0 5px 5px 0 !important;
+    border-radius: 0 5px 5px 0 !important;
+}
+
 .table1 tfoot td{
     color: #9CD009;
     font-size:32px;
