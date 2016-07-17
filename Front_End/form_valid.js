@@ -60,6 +60,10 @@ function validateForm_admin()
         }
         for(var j = 0; j <= 23; ++j)
         {
+            for(var clr = 0; clr < Object.keys(record).length; ++clr)
+            {
+                record[Object.keys(record)[clr]].daily_room = 0;
+            }
             for(var k = 0; k <= 1; ++k)
             {
                 var string = "c";
@@ -79,7 +83,7 @@ function validateForm_admin()
                     }
                 }
                 else continue;
-                if(record[input[0].value].daily > 1)
+                if(record[input[0].value].daily_room > 1)
                 {
                     window.alert("'" + input[0].value + "' 禮拜" + week_cht.substring(i, i + 1) + "同一時段填兩個");
                     return false;
