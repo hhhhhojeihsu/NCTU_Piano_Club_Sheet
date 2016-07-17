@@ -865,7 +865,7 @@ function BuildHtmlResult(array_obj)
     if(array_obj.error.length !== 0)
     {
         body += "錯誤的有(你動作太慢這格被別人搶走了QQ):\n";
-        body += draw(array_obj.err);
+        body += draw(array_obj.error);
     }
     body += "<br>";
     body += redirect_2_front_page;
