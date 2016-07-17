@@ -308,7 +308,7 @@ function start(){
             }
 
             body += "<br>";
-            body += "每週最多八個時段 每天最多三個時段 417是較靠社辦的那間";
+            body += "每週最多八個時段 每天最多三個時段<br>417是較靠社辦的那間";
 
             /*  get all data this week except the user himself  */
             //the array is sort by time, date then room
