@@ -412,8 +412,6 @@ function start(){
             });
         });
     }
-
-    //TODO: FIX ASYNC HELL BY ADJUST THE STRUCTURE
     function UserQuery(req, res)
     {
         var changes = {
@@ -443,113 +441,128 @@ function start(){
             sql.connection.query("SELECT * from schedule WHERE date >= ? AND name = ? ORDER BY date ASC, time ASC, room ASC", [query_origin_date, query_origin_name], function(err, rows_origin, fields_origin){
                 if(err) throw err;
                 var chk_ptr = 0;    //pointer points to the original acquire from database
+                var front_ptr = 0;  //pointer points to the incoming data
                 var rows_origin_marker = []; //marker use to save which checkbox is identical to the one on database
+                var rows_front_marker = [];
                 /*  initialize the marker array */
                 for(var ctr_marker = 0; ctr_marker < rows_origin.length; ++ctr_marker)
                 {
                     rows_origin_marker[ctr_marker] = false;
+                    //false : del, true: no change
+                }
+                for(var ctr_marker = 0; ctr_marker < query.length; ++ctr_marker)
+                {
+                    rows_front_marker[ctr_marker] = false;
+                    //false: insert queue, true: no change
                 }
                 /*  iterating through all checkboxes    */
-                query.forEach(function(element, index, array){
+                query.forEach(function(element, index, array) {
 
                     //if(index === array.length - 1)
                     //it means that if the iteration is about to end, then call the function to delete data
                     //structure original used to prevent callback hell, but failed
-                    //TODO: CHANGE TO THE METHOD USED IN FUNCTION AdminQuery
 
                     /*  compare with data on sql    */
                     //reference: http://stackoverflow.com/questions/7244513/javascript-date-comparisons-dont-equal
                     //if the data point to is earlier than current pointed date object
                     //keep point to the next one until it's equal or bigger than
-                    while(
+                    while (
                     chk_ptr < rows_origin.length &&
-                        (rows_origin[chk_ptr].date < element[0] || (rows_origin[chk_ptr].date.getTime() === element[0].getTime() && rows_origin[chk_ptr].time < element[1]) || (rows_origin[chk_ptr].date.getTime() === element[0].getTime() && rows_origin[chk_ptr].time === element[1] && rows_origin[chk_ptr].room < element[2]))
-                    )
-                    {
-                        console.log(rows_origin[chk_ptr].date);
+                    (rows_origin[chk_ptr].date < element[0] || (rows_origin[chk_ptr].date.getTime() === element[0].getTime() && rows_origin[chk_ptr].time < element[1]) || (rows_origin[chk_ptr].date.getTime() === element[0].getTime() && rows_origin[chk_ptr].time === element[1] && rows_origin[chk_ptr].room < element[2]))
+                        ) {
                         ++chk_ptr;
                     }
                     //the record remain unchanged
-                    if(
+                    if (
                         chk_ptr < rows_origin.length &&
                         (rows_origin[chk_ptr].date.getFullYear() === element[0].getFullYear() &&
                         rows_origin[chk_ptr].date.getMonth() === element[0].getMonth() &&
                         rows_origin[chk_ptr].date.getDate() === element[0].getDate() &&
                         rows_origin[chk_ptr].time === element[1] &&
                         rows_origin[chk_ptr].room === element[2])
-                    )
-                    {
+                    ) {
                         rows_origin_marker[chk_ptr] = true;
+                        rows_front_marker[front_ptr] = true;
                         ++chk_ptr;
+                        ++front_ptr;
                         //reference: http://stackoverflow.com/questions/18452920/continue-in-cursor-foreach
-                        if(index === array.length - 1)
-                        {
-                            changes = DeleteFromDb(rows_origin, rows_origin_marker, changes, fields, res);
-                            console.log("Caller 1");
-                        }
-                        return true;
                     }
-                    //variable used to send query and prevent sql injection
-                    var qry_esc_date = element[0].getFullYear() + "-" + (element[0].getMonth() + 1) + "-" + element[0].getDate();
-                    var qry_esc_time = element[1];
-                    var qry_esc_room = element[2];
-                    //send query to check the specify field is empty or occupied
-                    sql.connection.query("SELECT `name` from `schedule` WHERE `date` = ? AND `time` = ? AND `room` = ?", [qry_esc_date, qry_esc_time, qry_esc_room],function(err, rows_chk, fields_func){
-                        if(err) throw err;
-                        //variable used to insert into database
-                        var sql_str_written_escape_obj = {
-                            date: element[0].getFullYear() + "-" + (element[0].getMonth() + 1) + "-" + element[0].getDate(),
-                            time: Number(element[1]),
-                            room: Number(element[2]),
-                            name: fields[0]
-                        };
-                        //no record found -> force write
-                        if(rows_chk.length === 0)
-                        {
-                            sql.connection.query("INSERT INTO `schedule` SET ?", sql_str_written_escape_obj,function(err, rows_sql_str_written, fields_func){
-                                if(err) throw err;
-                                console.log(this.sql);
-                                changes.add.push(sql_str_written_escape_obj);   //record the changes
-                                //reference: http://stackoverflow.com/questions/29738535/catch-foreach-last-iteration
-                                if(index === array.length - 1)
-                                {
-                                    changes = DeleteFromDb(rows_origin, rows_origin_marker, changes, fields, res);
-                                    console.log("Caller 2");
-                                }
-                            });
-                        }
-                        //check if name is not the same as the one
-                        else if(rows_chk[0].name !== fields[0])
-                        {
-                            //ERROR: THIS SPACE IS RESERVED BY OTHERS
-                            changes.error.push(sql_str_written_escape_obj);
-                            console.log("INSERT INTO `schedule` SET date = " + (element[0].getFullYear() + "-" + (element[0].getMonth() + 1) + "-" + element[0].getDate()) + " date = " + element[1] + " room = " + element[2] + " Failed");
-                            if(index === array.length - 1)
-                            {
-                                changes = DeleteFromDb(rows_origin, rows_origin_marker, changes, fields, res);
-                                console.log("Caller 3");
-                            }
-                        }
-                        //if the name is the received one then do nothing
-                        else
-                        {
-                            if(index === array.length - 1)
-                            {
-                                changes = DeleteFromDb(rows_origin, rows_origin_marker, changes, fields, res);
-                                console.log("Caller 4");
-                            }
-                        }
+                    else {
+                        ++front_ptr;
+                    }
+                });
+                /*  website part. query is execute after this   */
+                //deletion
+                rows_origin_marker.forEach(function(element, index, array){
+                    if(element) return true;
+                    //push into changed
+                    changes.min.push({
+                        date: rows_origin[index].date.getFullYear() + "-" + (rows_origin[index].date.getMonth() + 1) + "-" + rows_origin[index].date.getDate(),
+                        time: rows_origin[index].time,
+                        room: rows_origin[index].room,
+                        name: fields[0],
+                        id: rows_origin[index].id
                     });
                 });
-                if(query.length === 0)
-                {
-                    changes = DeleteFromDb(rows_origin, rows_origin_marker, changes, fields, res);
-                    console.log("Caller 5");
-                }
+                //addition or error
+                rows_front_marker.forEach(function(element, index, array){
+                    if(element)
+                    {
+                        if(index === array.length - 1) responseUserPage(res, changes);
+                        return true;
+                    }
+                    //check if the field is already filled
+                    var qry_esc_date = query[index][0].getFullYear() + "-" + (query[index][0].getMonth() + 1) + "-" + query[index][0].getDate();
+                    var qry_esc_time = query[index][1];
+                    var qry_esc_room = query[index][2];
+                    var sql_str_written_escape_obj = {
+                        date: qry_esc_date,
+                        time: qry_esc_time,
+                        room: qry_esc_room,
+                        name: fields[0]
+                    };
+                    sql.connection.query("SELECT * from `schedule` WHERE `date` = ? AND `time` = ? AND `room` = ?", [qry_esc_date, qry_esc_time, qry_esc_room],function(err, rows_chk, fields_func){
+                        if(err) throw err;
+                        if(rows_chk.length === 0)   //not occupied
+                        {
+                            changes.add.push(sql_str_written_escape_obj);
+                        }
+                        else    //error
+                        {
+                            changes.error.push(sql_str_written_escape_obj);
+                            console.log("INSERT INTO `schedule` SET date = " + qry_esc_date + " time = " + qry_esc_time + " room = " + qry_esc_room + " Failed");
+                        }
+                        if(index === array.length - 1) responseUserPage(res, changes);
+                    });
+                });
+                if(rows_front_marker.length === 0) responseUserPage(res, changes);
+
             });
         });
-
         form.parse(req);
+    }
+    function responseUserPage(res, changes)
+    {
+        res.writeHead(200, {
+            'Content-Type': 'text/html'
+        });
+        res.write(BuildHtmlResult(changes));
+        res.end(function(){
+            /*  execute query   */
+            changes.min.forEach(function(element, index, array){
+                sql.connection.query("DELETE FROM `schedule` WHERE `id` = ?", element.id, function(err, rows_query_del, fields_func){
+                    if (err) throw err;
+                    console.log(this.sql);
+                });
+            });
+            changes.add.forEach(function(element, index, array){
+                sql.connection.query("INSERT INTO `schedule` SET ?", element,function(err, rows_sql_str_written, fields_func){
+                    if(err) throw err;
+                    console.log(this.sql);
+                });
+            });
+            return ;
+        });
     }
 
     function AdminQuery(req, res)
@@ -688,36 +701,6 @@ function start(){
     });
 }
 
-//DeleteFromDb is the last asynchronous function called before respond
-//Due to the asynchronous problem
-function DeleteFromDb(rows_origin, rows_origin_marker, changes, fields, res)
-{
-    for(var ctr_clear = 0; ; ++ctr_clear)
-    {
-        //if the loop ends call the respond function
-        if(ctr_clear === rows_origin.length)
-        {
-            res.writeHead(200, {
-                'Content-Type': 'text/html'
-            });
-            res.end(BuildHtmlResult(changes));
-            return changes;
-        }
-        if(rows_origin_marker[ctr_clear]) continue;  //not the target
-        //push into changed
-        changes.min.push({
-            date: rows_origin[ctr_clear].date.getFullYear() + "-" + (rows_origin[ctr_clear].date.getMonth() + 1) + "-" + rows_origin[ctr_clear].date.getDate(),
-            time: rows_origin[ctr_clear].time,
-            room: rows_origin[ctr_clear].room,
-            name: fields[0]
-        });
-        //send delete query
-        sql.connection.query("DELETE FROM `schedule` WHERE `id` = ?", rows_origin[ctr_clear].id, function(err, rows_query_del, fields_func){
-            if (err) throw err;
-            console.log(this.sql);
-        });
-    }
-}
 
 
 
@@ -865,7 +848,7 @@ function BuildHtmlResult(array_obj)
     if(array_obj.error.length !== 0)
     {
         body += "錯誤的有(你動作太慢這格被別人搶走了QQ):\n";
-        body += draw(array_obj.err);
+        body += draw(array_obj.error);
     }
     body += "<br>";
     body += redirect_2_front_page;
