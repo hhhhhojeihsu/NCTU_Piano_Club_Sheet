@@ -19,7 +19,7 @@ var mode_selection = 1;
 var ip_address_re_ = mode_selection ? 'http://nodejs-wwwworkspace.rhcloud.com/' : 'http://localhost:8888/';
 var ip_address_local_ = mode_selection ? process.env.OPENSHIFT_NODEJS_IP : '127.0.0.1';
 var port_ = mode_selection ? process.env.OPENSHIFT_NODEJS_PORT : '8888';
-var bulletin_ = mode_selection ? path.join(process.env.OEPNSHIFT_DATA_DIR, 'images') : path.join(__dirname, '..', 'Front_End', 'images');
+var bulletin_ = mode_selection ? path.join(process.env.OPENSHIFT_DATA_DIR, 'images') : path.join(__dirname, '..', 'Front_End', 'images');
 //bulletin_ store the location of image on index.html
 
 /*  global variable */
@@ -754,6 +754,7 @@ function start(){
             else    //valid file
             {
                 //make sure original file exists
+                //TODO: MAKESURE THE DIRECTORY ON OPENSHIFT HAS ITEM, ENSUREFILE SEEMS NOT WORK ON SERVER DUE TO PERMISSION
                 fs.ensureFile(path.join(bulletin_, "image.jpg"), function(err)
                 {
                     if(err) throw err;
