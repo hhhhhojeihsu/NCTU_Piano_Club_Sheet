@@ -1,8 +1,31 @@
+@font-face {
+    font-family: 'Noto Sans TC';
+    font-style: normal;
+    font-weight: 300;
+    src: url(//fonts.gstatic.com/ea/notosanstc/v1/NotoSansTC-Light.woff2) format('woff2'),
+    url(//fonts.gstatic.com/ea/notosanstc/v1/NotoSansTC-Light.woff) format('woff'),
+    url(//fonts.gstatic.com/ea/notosanstc/v1/NotoSansTC-Light.otf) format('opentype');
+}
+
+@font-face
+{
+    font-family: 'Exo 2';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Exo 2'), local('Exo2-Regular'), url(https://fonts.gstatic.com/s/exo2/v3/-A4eIjQkAwKL411pgtQ4VA.woff2) format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
+}
+
+body
+{
+    font-family: 'Exo 2', 'Noto Sans TC', Helvetica, sans-serif;
+    font-size: medium;
+}
+
 /*  title   */
 h1
 {
     text-align: center;
-    font-family: Arial, sans-serif;
     font-size: xx-large;
 }
 
@@ -62,12 +85,12 @@ reference: http://stackoverflow.com/questions/114543/horizontally-center-a-div-i
 .login
 {
     margin: 20px auto;
-    width: 300px;
+    width: 220px;
 }
 .login-screen
 {
     background-color: #ffffff;
-    padding: 20px;
+    padding: 20px 5px 20px 5px;
     border-radius: 5px
 }
 
@@ -82,6 +105,11 @@ reference: http://stackoverflow.com/questions/114543/horizontally-center-a-div-i
     text-align: center;
 }
 
+fieldset
+{
+    padding: 2px;
+}
+
 input
 {
     text-align: center;
@@ -91,7 +119,7 @@ input
     font-size: 16px;
     font-weight: 200;
     padding: 10px 0;
-    width: 250px;
+    width: 200px;
     transition: border .5s;
 }
 
@@ -115,7 +143,7 @@ input:focus
     box-shadow: none;
     transition: 0.25s;
     display: block;
-    width: 250px;
+    width: 200px;
     margin: 0 auto;
 }
 
