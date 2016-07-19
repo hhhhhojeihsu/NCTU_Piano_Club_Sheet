@@ -3,7 +3,7 @@
 /*  required module */
 var express = require('express');
 var bodyParser = require('body-parser');
-var fs = require('fs');
+var fs = require('fs-extra');
 var formidable = require("formidable");
 var path = require("path");
 var sql = require('./sql');
@@ -19,6 +19,8 @@ var mode_selection = 1;
 var ip_address_re_ = mode_selection ? 'http://nodejs-wwwworkspace.rhcloud.com/' : 'http://localhost:8888/';
 var ip_address_local_ = mode_selection ? process.env.OPENSHIFT_NODEJS_IP : '127.0.0.1';
 var port_ = mode_selection ? process.env.OPENSHIFT_NODEJS_PORT : '8888';
+var bulletin_ = mode_selection ? path.join(process.env.OEPNSHIFT_DATA_DIR, 'images') : path.join(__dirname, '..', 'Front_End', 'images');
+//bulletin_ store the location of image on index.html
 
 /*  global variable */
 var redirect_2_front_page = "<a href=" + ip_address_re_ + ">點此返回首頁</a>";
@@ -45,7 +47,8 @@ function start(){
 
 
     var server = express();
-    server.use(bodyParser.urlencoded({extended: true}));
+    server.use(bodyParser.urlencoded({extended: true, limit: '5mb'}));
+    server.use(bodyParser.json({defer: true, limit: '5mb'}));
     /*  modify the index.html base on mode  */
     change_html_path('index.html');
     change_html_path('fail.html');
@@ -53,6 +56,7 @@ function start(){
     //Front End File by using get
     //reference: http://stackoverflow.com/questions/20322480/express-js-static-relative-parent-directory
     server.use(express.static(path.join(__dirname, '..', 'Front_End')));
+    server.use(express.static(bulletin_));
 
     /*  home page */
     //reference: http://stackoverflow.com/a/24308957/6007708
@@ -84,6 +88,11 @@ function start(){
     //access system with fb account
     server.post('/process_fb', function(req, res){
         UserPage(req, res);
+    });
+
+    //uploaded picture
+    server.post('/upload', function(req, res){
+        Upload(req, res);
     });
 
     //reference: http://stackoverflow.com/a/6528951/6007708
@@ -210,7 +219,19 @@ function start(){
             body += "</form>";
             body += "</table>";
             body += "</div>";
-
+            /*  update bulletin board */
+            //reference: http://stackoverflow.com/questions/23691194/node-express-file-upload
+            //           http://stackoverflow.com/questions/21842274/cross-browser-custom-styling-for-file-upload-button
+            body += "<div id='file_div' class='upload-screen'>";
+            body += "<p style='font-size: 16px;'>首頁布告欄圖片上傳(限jpg檔 限5mb)</p>";
+            body += "<form method='post' enctype='multipart/form-data' action='" + ip_address_re_ + "upload'>";
+            body += "<label class='myLabel'>";
+            body += "<input type='file' name='fileupload' accept='image/jpeg' required>";
+            body += "<span>選擇檔案</span>"
+            body += "</label>";
+            body += "<input class='btn btn-primary' type='submit' value='送出'>";
+            body += "</form>";
+            body += "</div>";
             /*  print out the page  */
             html = '<!DOCTYPE html><html lang="zh-Hant">' + '<html><head>' + head + '</head><body>' + body + '</body></html>';
             res.writeHead(200, {
@@ -686,12 +707,71 @@ function start(){
                 res.writeHead(200, {
                     'Content-Type': 'text/html'
                 });
-                res.end(BuildAdminResult());
+                res.end(BuildAdminResult(0));
             });
 
         });
 
         form.parse(req);
+    }
+
+    function Upload(req, res)
+    {
+        var state = 0;
+        var max_size = 5 * 1024 * 1024 * 8;    //byte
+        //0: valid, 1: invalid size, 2: invalid path
+        var form = new formidable.IncomingForm();
+        form.uploadDir = bulletin_;       //set upload directory
+        form.keepExtensions = true;     //keep file extension
+        form.parse(req, function(err, fields, files) {
+            res.writeHead(200, {'content-type': 'text/html'});
+            //Validate
+            console.log("file size: " + files.fileupload.size);
+            if (files.fileupload.size > max_size)
+            {
+                state = 1;
+                console.log("invalid size");
+            }
+            console.log("file path: " + files.fileupload.path);
+            console.log("file name: "+ files.fileupload.name);
+            console.log("file type: " + files.fileupload.type);
+            if((files.fileupload.type + "") !== "image/jpeg")
+            {
+                state = 2;
+                console.log("invalid file type");
+            }
+            //Formidable changes the name of the uploaded file
+            //Rename the file to its original name
+            res.write(BuildAdminResult(state));
+            if(state !== 0) //invalid file
+            {
+                fs.remove(files.fileupload.path, function(err)
+                {
+                   if(err) throw err;
+                   console.log("Invalid file deleted");
+                });
+            }
+            else    //valid file
+            {
+                //make sure original file exists
+                fs.ensureFile(path.join(bulletin_, "image.jpg"), function(err)
+                {
+                    if(err) throw err;
+                    //delete the original file
+                    fs.remove(path.join(bulletin_, "image.jpg"), function(err)
+                    {
+                        if(err) throw err;
+                        console.log("Delete original image");
+                        //replace it
+                        fs.rename(files.fileupload.path, path.join(bulletin_, "image.jpg"), function(err){
+                            if (err) throw err;
+                            console.log('Replace complete');
+                        });
+                    });
+                });
+            }
+            res.end();
+        });
     }
     //listening on port 8888
     server.listen(port_, ip_address_local_, function(){
@@ -755,15 +835,18 @@ function ParseCheckbox_AdminForm(input, mode)
 }
 
 /*  just a simple function to redirect to the main page */
-function BuildAdminResult()
+function BuildAdminResult(state)
 {
+    //state 0: valid, 1: file size invalid, 2: type invalid
     var head = "";
     var body = "";
     var footer = "";
     head += "<meta charset='UTF-8'>";
     head += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
     head += "<meta http-equiv='refresh' content='3;url=" + ip_address_re_ + "'>";
-    body += "所有變動都已儲存，網頁將在3秒鐘後自動導向至首頁。";
+    if(state === 0) body += "所有變動都已儲存，網頁將在3秒鐘後自動導向至首頁。";
+    else if(state === 1) body += "檔案大小超過上限，網頁將在3秒鐘後自動導向至首頁。"
+    else body += "檔案格式錯誤，網頁將在3秒鐘後自動導向至首頁。";
     body += redirect_2_front_page;
     return "<!DOCTYPE html>\n<html lang='zh-Hant'>" +  "<head>" + head + "</head>" + "<body>" + body + "</body>" + "<footer>" + footer + "</footer>" + "</html>";
 }
