@@ -547,23 +547,22 @@ function start(){
             'Content-Type': 'text/html'
         });
         res.write(BuildHtmlResult(changes));
-        res.end(function(){
-            /*  execute query   */
-            changes.min.forEach(function(element, index, array){
-                sql.connection.query("DELETE FROM `schedule` WHERE `id` = ?", element.id, function(err, rows_query_del, fields_func){
-                    if (err) throw err;
-                    console.log(this.sql);
-                });
-            });
-            changes.add.forEach(function(element, index, array){
-                sql.connection.query("INSERT INTO `schedule` SET ?", element,function(err, rows_sql_str_written, fields_func){
-                    if(err) throw err;
-                    console.log(this.sql);
-                });
-            });
-            return ;
-        });
-    }
+        res.end();
+        /*  execute query   */
+                    changes.min.forEach(function(element, index, array){
+                        sql.connection.query("DELETE FROM `schedule` WHERE `id` = ?", element.id, function(err, rows_query_del, fields_func){
+                            if (err) throw err;
+                            console.log(this.sql);
+                        });
+                    });
+                    changes.add.forEach(function(element, index, array){
+                        sql.connection.query("INSERT INTO `schedule` SET ?", element,function(err, rows_sql_str_written, fields_func){
+                            if(err) throw err;
+                            console.log(this.sql);
+                        });
+                    });
+
+        }
 
     function AdminQuery(req, res)
     {
