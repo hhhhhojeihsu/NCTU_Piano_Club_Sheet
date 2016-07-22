@@ -5,14 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>交通大學鋼琴社琴房預約系統</title>
-    <link rel="icon" href="http://nodejs-wwwworkspace.rhcloud.com/Material/piano_icon.png">
-    <link rel="stylesheet" type="text/css" href="http://nodejs-wwwworkspace.rhcloud.com/Style.css">
+    <link rel="icon" href="/Material/piano_icon.png">
+    <link rel="stylesheet" type="text/css" href="/Style.css">
 </head>
 
 <body>
 <h1>交通大學鋼琴社琴房預約系統</h1>
 <!--    bulletin board  -->
-<a id="cover" target="_blank" href="https://www.facebook.com/groups/nctu.piano/"><img title="交通大學鋼琴社FB粉專"  src="http://localhost:8888/image.jpg"></a>
+<a id="cover" target="_blank" href="https://www.facebook.com/groups/nctu.piano/"><img title="交通大學鋼琴社FB粉專"  src="/image.jpg"></a>
 <br>
 
 
@@ -25,7 +25,7 @@
     <div id="fb-btn"><fb:login-button scope="public_profile" data-auto-logout-link="true" data-size="xlarge" onlogin="checkLoginState();"></fb:login-button></div>
     <p class="line-beside-text"><span id="text-between-line">或是</span></p>
     <button id="show_admin_btn" class="btn btn-primary btn-large btn-block" onclick="showAdmin()">以管理員身分登入</button>
-    <form action="http://nodejs-wwwworkspace.rhcloud.com/process" method="POST" enctype="multipart/form-data" name="user_input" id="login_guest">
+    <form action="/process" method="POST" enctype="multipart/form-data" name="user_input" id="login_guest">
         <fieldset>
             <label for="user_id"></label>
         <input type="text" class="login-field" id="user_id" name="user_id" placeholder="帳號" required>
@@ -42,8 +42,8 @@
 </body>
 
 <footer class="text_centered">
-    <script type="text/javascript" src="http://nodejs-wwwworkspace.rhcloud.com/fb.js"></script>
-    <script type="text/javascript" src="http://nodejs-wwwworkspace.rhcloud.com/mobile.js"></script>
+    <script type="text/javascript" src="/fb.js"></script>
+    <script type="text/javascript" src="/mobile.js"></script>
     <hr>
     Developed by hhhhojeihsu<br>
     Contact Me: hhhhojeihsu&#x40;gmail&#8228;com
