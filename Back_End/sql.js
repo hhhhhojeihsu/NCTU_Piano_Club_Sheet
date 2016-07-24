@@ -19,7 +19,20 @@ var connection = mysql.createConnection({
     database : database_
 });
 
+//reference: http://stackoverflow.com/questions/20210522/nodejs-mysql-error-connection-lost-the-server-closed-the-connection
+var handleDisconnect = function()
+{
+    connection.connect(function(err){
+        if(err)
+        {
+            console.log("error connecting to database:", err.code);
+            setTimeout(handleDisconnect(), 2000);
+        }
+        else console.log('reconnected to database');
+    });
+}
 
 connection.connect();
 
 exports.connection = connection;
+exports.handleDisconnect = handleDisconnect;
