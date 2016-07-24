@@ -3,7 +3,7 @@
 /*  required module */
 var express = require('express');
 var bodyParser = require('body-parser');
-var fs = require('fs');
+var fs = require('fs-extra');
 var formidable = require("formidable");
 var path = require("path");
 var sql = require('./sql');
@@ -19,6 +19,8 @@ var mode_selection = 1;
 var ip_address_re_ = mode_selection ? 'http://nodejs-wwwworkspace.rhcloud.com/' : 'http://localhost:8888/';
 var ip_address_local_ = mode_selection ? process.env.OPENSHIFT_NODEJS_IP : '127.0.0.1';
 var port_ = mode_selection ? process.env.OPENSHIFT_NODEJS_PORT : '8888';
+var bulletin_ = mode_selection ? path.join(process.env.OPENSHIFT_DATA_DIR, 'images') : path.join(__dirname, '..', 'Front_End', 'images');
+//bulletin_ store the location of image on index.html
 
 /*  global variable */
 var redirect_2_front_page = "<a href=" + ip_address_re_ + ">點此返回首頁</a>";
@@ -45,14 +47,15 @@ function start(){
 
 
     var server = express();
-    server.use(bodyParser.urlencoded({extended: true}));
+    server.use(bodyParser.urlencoded({extended: true, limit: '5mb'}));
+    server.use(bodyParser.json({defer: true, limit: '5mb'}));
     /*  modify the index.html base on mode  */
-    change_html_path('index.html');
     change_html_path('fail.html');
     change_html_path('fb.js');
     //Front End File by using get
     //reference: http://stackoverflow.com/questions/20322480/express-js-static-relative-parent-directory
     server.use(express.static(path.join(__dirname, '..', 'Front_End')));
+    server.use(express.static(bulletin_));
 
     /*  home page */
     //reference: http://stackoverflow.com/a/24308957/6007708
@@ -86,6 +89,11 @@ function start(){
         UserPage(req, res);
     });
 
+    //uploaded picture
+    server.post('/upload', function(req, res){
+        Upload(req, res);
+    });
+
     //reference: http://stackoverflow.com/a/6528951/6007708
     /*  404 handler */
     server.get('*', function(req, res)
@@ -110,7 +118,11 @@ function start(){
             /*  detect user */
             //three user in total -> 0: su, 1: admin, 2: user
             sql.connection.query("SELECT * FROM users", function (err, rows, fields){
-                if(err) throw err;
+                if(err)
+                {
+                    if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                    else throw err;
+                }
                 for (var counter = 0; counter < rows.length; ++counter)
                 {
                     //detect user
@@ -131,7 +143,7 @@ function start(){
                 {
                     console.log("Attempt failed with User: " + user_name + " Pass: " + user_pass + " detected at: " + getnow());
                     //reference: http://stackoverflow.com/questions/17341122/link-and-execute-external-javascript-file-hosted-on-github
-                    res.redirect(ip_address_re_ + "fail.html");
+                    res.redirect("/fail.html");
                     res.end();
                 }
             });
@@ -147,7 +159,11 @@ function start(){
         var query_esc_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
         //get all the field this week
         sql.connection.query("SELECT * FROM schedule WHERE date >= ? ORDER BY time ASC, date ASC, room ASC", [query_esc_date], function(err, rows, fields){
-            if(err) throw err;
+            if(err)
+            {
+                if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                else throw err;
+            }
             /*  variable used for generating html  */
             var html = "";
             var head = '';
@@ -155,14 +171,14 @@ function start(){
             head += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
             head += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
             head += "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css' integrity='sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7' crossorigin='anonymous'>";
-            head += "<link rel='stylesheet' type='text/css' href='" + ip_address_re_ + "Style_user.css'>";
-            head += "<script type='text/javascript' src='" + ip_address_re_ + "form_valid.js'></script>";
+            head += "<link rel='stylesheet' type='text/css' href='/Style_user.css'>";
+            head += "<script type='text/javascript' src='/form_valid.js'></script>";
             body += "你現在在Administrator模式，可以任意更改與觀看本周所有的資料。'除非必要不然不應任意更改'。<br>預設也會檢驗填入資料，若有需要保留琴房供特殊使用且超出預設限制，請換一個名字填入表格<br>每週最多八個時段 每天最多三個時段";
             var arr_pos = 0;    //pointer point to which field to be print
             /*  generating table    */
             body += "<div id='select_menu'>";
             body += "<table class='table1'>";
-            body += "<form action='" + ip_address_re_ + "process_admin' onsubmit='return validateForm_admin()' method='POST' enctype='multipart/form-data' name='admin_form' id='admin_form'>";    //data is sent to process_admin
+            body += "<form action='/process_admin' onsubmit='return validateForm_admin()' method='POST' enctype='multipart/form-data' name='admin_form' id='admin_form'>";    //data is sent to process_admin
             body += GenerateLabel(FirstDayOfWeek, days_this_mon, 1);
             body += "<tfoot>";
             body += "<tr><td><input class='btn btn-primary' type='submit' value='送出'></td></tr>";
@@ -210,7 +226,19 @@ function start(){
             body += "</form>";
             body += "</table>";
             body += "</div>";
-
+            /*  update bulletin board */
+            //reference: http://stackoverflow.com/questions/23691194/node-express-file-upload
+            //           http://stackoverflow.com/questions/21842274/cross-browser-custom-styling-for-file-upload-button
+            body += "<div id='file_div' class='upload-screen'>";
+            body += "<p style='font-size: 16px;'>首頁布告欄圖片上傳(限jpg檔 限5mb)</p>";
+            body += "<form method='post' enctype='multipart/form-data' action='/upload'>";
+            body += "<label class='myLabel'>";
+            body += "<input type='file' name='fileupload' accept='image/jpeg' required>";
+            body += "<span>選擇檔案</span>"
+            body += "</label>";
+            body += "<input class='btn btn-primary' type='submit' value='送出'>";
+            body += "</form>";
+            body += "</div>";
             /*  print out the page  */
             html = '<!DOCTYPE html><html lang="zh-Hant">' + '<html><head>' + head + '</head><body>' + body + '</body></html>';
             res.writeHead(200, {
@@ -242,7 +270,11 @@ function start(){
         //not that the array is sort by date time then room
         sql.connection.query("SELECT * FROM schedule WHERE date >= ? AND name = ? ORDER BY date ASC, time ASC, room ASC", [query_esc_date, query_esc_name], function(err, rows, fields)
         {
-            if(err) throw err;  //exception, no handling though
+            if(err)
+            {
+                if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                else throw err;
+            }
             /*  variable generating html    */
             var html = "";
             var head = '';
@@ -252,8 +284,8 @@ function start(){
             head += "<meta charset='UTF-8'><title>交通大學鋼琴社琴房預約系統</title><link rel='icon' href='Material/piano_icon.png'>";
             head += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
             head += "<link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css' integrity='sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7' crossorigin='anonymous'>";
-            head += "<link rel='stylesheet' type='text/css' href='" + ip_address_re_ + "Style_user.css'>";
-            head += "<script type='text/javascript' src='" + ip_address_re_ + "form_valid.js'></script>";
+            head += "<link rel='stylesheet' type='text/css' href='/Style_user.css'>";
+            head += "<script type='text/javascript' src='/form_valid.js'></script>";
             /*  body    */
             body += "您欲輸入的名字是'"+ user_id + "' ";
             /*  no record found  */
@@ -313,7 +345,11 @@ function start(){
             /*  get all data this week except the user himself  */
             //the array is sort by time, date then room
             sql.connection.query("SELECT * FROM schedule WHERE date >= ? AND name != ? ORDER BY time ASC, date ASC, room ASC", [query_esc_date, query_esc_name], function(err, rows_oth, fields){
-                if(err) throw err;
+                if(err)
+                {
+                    if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                    else throw err;
+                }
                 //resort the array because the array is row-based
                 rows.sort(function(a, b){
                     if(a.time > b.time) return 1;
@@ -332,7 +368,7 @@ function start(){
                 /*  point to the selectable form for user   */
                 body += "<div id='select_menu' class='table-responsive'>";
                 body += "<table class='table1'>";
-                body += "<form action='" + ip_address_re_ + "process_user' onsubmit='return validateForm_user()' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";  //collected data is sent to process_user
+                body += "<form action='/process_user' onsubmit='return validateForm_user()' method='POST' enctype='multipart/form-data' name='user_form' id='user_form'>";  //collected data is sent to process_user
                 //create a hidden input box that stored user name passed from the main page
                 body += "<input style='display: none;' type='text' id='hid_user' name='hid_user' value='";
                 body += user_id;
@@ -439,7 +475,11 @@ function start(){
             //reference: http://stackoverflow.com/questions/750486/javascript-closure-inside-loops-simple-practical-example
             //get data from server and compare the differences
             sql.connection.query("SELECT * from schedule WHERE date >= ? AND name = ? ORDER BY date ASC, time ASC, room ASC", [query_origin_date, query_origin_name], function(err, rows_origin, fields_origin){
-                if(err) throw err;
+                if(err)
+                {
+                    if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                    else throw err;
+                }
                 var chk_ptr = 0;    //pointer points to the original acquire from database
                 var front_ptr = 0;  //pointer points to the incoming data
                 var rows_origin_marker = []; //marker use to save which checkbox is identical to the one on database
@@ -522,7 +562,11 @@ function start(){
                         name: fields[0]
                     };
                     sql.connection.query("SELECT * from `schedule` WHERE `date` = ? AND `time` = ? AND `room` = ?", [qry_esc_date, qry_esc_time, qry_esc_room],function(err, rows_chk, fields_func){
-                        if(err) throw err;
+                        if(err)
+                        {
+                            if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                            else throw err;
+                        }
                         if(rows_chk.length === 0)   //not occupied
                         {
                             changes.add.push(sql_str_written_escape_obj);
@@ -551,13 +595,21 @@ function start(){
         /*  execute query   */
                     changes.min.forEach(function(element, index, array){
                         sql.connection.query("DELETE FROM `schedule` WHERE `id` = ?", element.id, function(err, rows_query_del, fields_func){
-                            if (err) throw err;
+                            if(err)
+                            {
+                                if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                                else throw err;
+                            }
                             console.log(this.sql);
                         });
                     });
                     changes.add.forEach(function(element, index, array){
                         sql.connection.query("INSERT INTO `schedule` SET ?", element,function(err, rows_sql_str_written, fields_func){
-                            if(err) throw err;
+                            if(err)
+                            {
+                                if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                                else throw err;
+                            }
                             console.log(this.sql);
                         });
                     });
@@ -659,7 +711,11 @@ function start(){
                         name: fields_parse_date[index][3]
                     };
                     sql.connection.query("INSERT INTO `schedule` SET ?", sql_str_written_escape_obj, function(err, rows_sql_str_written, fields_func){
-                        if(err) throw err;
+                        if(err)
+                        {
+                            if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                            else throw err;
+                        }
                         console.log(this.sql);
                     });
                 });
@@ -668,7 +724,11 @@ function start(){
                     if(element === -1) return true;
                     var sql_str_written_escape_arr = [fields_parse_date[index][0].getFullYear() + "-" + (fields_parse_date[index][0].getMonth() + 1) + "-" + fields_parse_date[index][0].getDate(), Number(fields_parse_date[index][1]), Number(fields_parse_date[index][2]), fields_parse_date[index][3], element];
                     sql.connection.query("UPDATE `schedule` SET `date` = ?, `time` = ?,`room` = ?, `name` = ? WHERE `id` = ?", sql_str_written_escape_arr, function(err, rows_sql_updated, fields_func){
-                        if(err) throw err;
+                        if(err)
+                        {
+                            if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                            else throw err;
+                        }
                         console.log(this.sql);
                     });
                 });
@@ -686,12 +746,76 @@ function start(){
                 res.writeHead(200, {
                     'Content-Type': 'text/html'
                 });
-                res.end(BuildAdminResult());
+                res.end(BuildAdminResult(0));
             });
 
         });
 
         form.parse(req);
+    }
+
+    function Upload(req, res)
+    {
+        var state = 0;
+        var max_size = 5 * 1024 * 1024 * 8;    //byte
+        //0: valid, 1: invalid size, 2: invalid path
+        var form = new formidable.IncomingForm();
+        form.uploadDir = bulletin_;       //set upload directory
+        form.keepExtensions = true;     //keep file extension
+        form.parse(req, function(err, fields, files) {
+            res.writeHead(200, {'content-type': 'text/html'});
+            //Validate
+            console.log("file size: " + files.fileupload.size);
+            if (files.fileupload.size > max_size)
+            {
+                state = 1;
+                console.log("invalid size");
+            }
+            console.log("file path: " + files.fileupload.path);
+            console.log("file name: "+ files.fileupload.name);
+            console.log("file type: " + files.fileupload.type);
+            if((files.fileupload.type + "") !== "image/jpeg")
+            {
+                state = 2;
+                console.log("invalid file type");
+            }
+            //Formidable changes the name of the uploaded file
+            //Rename the file to its original name
+            res.write(BuildAdminResult(state));
+            if(state !== 0) //invalid file
+            {
+                fs.remove(files.fileupload.path, function(err)
+                {
+                   if(err) throw err;
+                   console.log("Invalid file deleted");
+                });
+            }
+            else    //valid file
+            {
+                //make sure original file exists
+                //TODO: MAKESURE THE DIRECTORY ON OPENSHIFT HAS ITEM, ENSUREFILE SEEMS NOT WORK ON SERVER DUE TO PERMISSION
+                fs.ensureFile(path.join(bulletin_, "image.jpg"), function(err)
+                {
+                    if(err)
+                    {
+                        if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                        else throw err;
+                    }
+                    //delete the original file
+                    fs.remove(path.join(bulletin_, "image.jpg"), function(err)
+                    {
+                        if(err) throw err;
+                        console.log("Delete original image");
+                        //replace it
+                        fs.rename(files.fileupload.path, path.join(bulletin_, "image.jpg"), function(err){
+                            if (err) throw err;
+                            console.log('Replace complete');
+                        });
+                    });
+                });
+            }
+            res.end();
+        });
     }
     //listening on port 8888
     server.listen(port_, ip_address_local_, function(){
@@ -755,15 +879,18 @@ function ParseCheckbox_AdminForm(input, mode)
 }
 
 /*  just a simple function to redirect to the main page */
-function BuildAdminResult()
+function BuildAdminResult(state)
 {
+    //state 0: valid, 1: file size invalid, 2: type invalid
     var head = "";
     var body = "";
     var footer = "";
     head += "<meta charset='UTF-8'>";
     head += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
     head += "<meta http-equiv='refresh' content='3;url=" + ip_address_re_ + "'>";
-    body += "所有變動都已儲存，網頁將在3秒鐘後自動導向至首頁。";
+    if(state === 0) body += "所有變動都已儲存，網頁將在3秒鐘後自動導向至首頁。";
+    else if(state === 1) body += "檔案大小超過上限，網頁將在3秒鐘後自動導向至首頁。"
+    else body += "檔案格式錯誤，網頁將在3秒鐘後自動導向至首頁。";
     body += redirect_2_front_page;
     return "<!DOCTYPE html>\n<html lang='zh-Hant'>" +  "<head>" + head + "</head>" + "<body>" + body + "</body>" + "<footer>" + footer + "</footer>" + "</html>";
 }
@@ -822,7 +949,7 @@ function BuildHtmlResult(array_obj)
     head += "<meta charset='UTF-8'>";
     head += "<title>交通大學鋼琴社琴房預約系統</title>";
     head += "<link rel='stylesheet' type='text/css' href='http://nodejs-wwwworkspace.rhcloud.com/Style_user.css'>";
-    head += "<script type='text/javascript' src='" + ip_address_re_ + "fb.js'></script>";
+    head += "<script type='text/javascript' src='/fb.js'></script>";
 
     /*  body    */
     //show the changes
@@ -872,10 +999,7 @@ function BuildNameError()
 
 function change_html_path(target)
 {
-    //!!Restricted to index.html and fail.html only
-    var file = "";
-    if(target === 'index.html') file = path.join(__dirname, '..', target);  //index
-    else file = path.join(__dirname, '..', 'Front_End', target);    //file inside Front_End
+    var file = path.join(__dirname, '..', 'Front_End', target);    //file inside Front_End
     //reference: http://stackoverflow.com/questions/14177087/replace-a-string-in-a-file-with-nodejs
     //inspired by : http://stackoverflow.com/questions/4285472/multiple-regex-replace
     fs.readFile(file, 'utf8', function(err, data){
@@ -883,13 +1007,13 @@ function change_html_path(target)
         var result;
         if(mode_selection)    //openshift mode
         {
-            if(target === 'fb.js') result = data.replace(/140237553072177/g, '139264433169489').replace(/localhost:8888/g, 'nodejs-wwwworkspace.rhcloud.com');
+            if(target === 'fb.js') result = data.replace(/140237553072177/g, '139264433169489');
             else result = data.replace(/localhost:8888/g, 'nodejs-wwwworkspace.rhcloud.com');
             console.log(target + ' modify to openshift mode');
         }
         else
         {
-            if(target === 'fb.js') result = data.replace(/139264433169489/g, '140237553072177').replace(/nodejs-wwwworkspace.rhcloud.com/g, 'localhost:8888');
+            if(target === 'fb.js') result = data.replace(/139264433169489/g, '140237553072177');
             else result = data.replace(/nodejs-wwwworkspace.rhcloud.com/g, 'localhost:8888');
             console.log(target + ' modify to localhost mode');
         }

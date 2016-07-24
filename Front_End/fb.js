@@ -34,7 +34,7 @@ function checkLoginState()
 
 window.fbAsyncInit = function(){
     FB.init({
-        appId      : '139264433169489',
+        appId      : '140237553072177',
         cookie     : true,  // enable cookies to allow the server to access 
                             // the session
         xfbml      : true,  // parse social plugins on this page
@@ -73,7 +73,7 @@ window.fbAsyncInit = function(){
 function successAPI(){
     FB.api('/me', function(response){
         //response.name is the name of sent object
-        post('http://nodejs-wwwworkspace.rhcloud.com/process_fb', {name: response.name});
+        post('/process_fb', {name: response.name});
     });
 }
 

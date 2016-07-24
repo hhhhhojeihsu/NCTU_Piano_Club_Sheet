@@ -23,11 +23,12 @@
   },
 
   "dependencies": {
-    "express": "~3.4.4",
-    "body-parser": "",
-    "formidable": "",
-    "mysql": "",
-    "path": ""
+    "express": ">= 4.14.0",
+    "body-parser": ">= 1.15.2",
+    "fs-extra": ">= 0.30.0",
+    "formidable": ">= 1.0.17",
+    "mysql": ">= 2.11.1",
+    "path": ">= 0.12.7"
   },
   "devDependencies": {},
   "bundleDependencies": [],

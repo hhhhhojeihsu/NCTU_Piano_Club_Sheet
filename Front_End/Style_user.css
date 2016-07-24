@@ -160,3 +160,39 @@ th
 {
     text-align: center;
 }
+
+
+label.myLabel input[type="file"] {
+    position: fixed;
+    top: -1000px;
+}
+
+.myLabel {
+    border: 1px solid #204d74;
+    border-radius: 4px;
+    font-size: 14px;
+    padding: 6px 12px;
+    margin: 2px;
+    background: #337ab7;
+    display: inline-block;
+}
+.myLabel:hover {
+    background: #286090;
+}
+.myLabel:active {
+    background: #CCF;
+}
+.myLabel :invalid + span {
+    color: #ffffff;
+}
+.myLabel :valid + span {
+    color: #ff9d00;
+}
+
+.upload-screen
+{
+    background-color: rgb(158,217,41);
+    padding: 20px 5px 20px 5px;
+    border-radius: 5px;
+    width: 180px;
+}
