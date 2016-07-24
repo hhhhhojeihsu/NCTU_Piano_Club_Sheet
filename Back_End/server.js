@@ -118,7 +118,11 @@ function start(){
             /*  detect user */
             //three user in total -> 0: su, 1: admin, 2: user
             sql.connection.query("SELECT * FROM users", function (err, rows, fields){
-                if(err) throw err;
+                if(err)
+                {
+                    if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                    else throw err;
+                }
                 for (var counter = 0; counter < rows.length; ++counter)
                 {
                     //detect user
@@ -155,7 +159,11 @@ function start(){
         var query_esc_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate() + "'";
         //get all the field this week
         sql.connection.query("SELECT * FROM schedule WHERE date >= ? ORDER BY time ASC, date ASC, room ASC", [query_esc_date], function(err, rows, fields){
-            if(err) throw err;
+            if(err)
+            {
+                if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                else throw err;
+            }
             /*  variable used for generating html  */
             var html = "";
             var head = '';
@@ -262,7 +270,11 @@ function start(){
         //not that the array is sort by date time then room
         sql.connection.query("SELECT * FROM schedule WHERE date >= ? AND name = ? ORDER BY date ASC, time ASC, room ASC", [query_esc_date, query_esc_name], function(err, rows, fields)
         {
-            if(err) throw err;  //exception, no handling though
+            if(err)
+            {
+                if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                else throw err;
+            }
             /*  variable generating html    */
             var html = "";
             var head = '';
@@ -333,7 +345,11 @@ function start(){
             /*  get all data this week except the user himself  */
             //the array is sort by time, date then room
             sql.connection.query("SELECT * FROM schedule WHERE date >= ? AND name != ? ORDER BY time ASC, date ASC, room ASC", [query_esc_date, query_esc_name], function(err, rows_oth, fields){
-                if(err) throw err;
+                if(err)
+                {
+                    if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                    else throw err;
+                }
                 //resort the array because the array is row-based
                 rows.sort(function(a, b){
                     if(a.time > b.time) return 1;
@@ -459,7 +475,11 @@ function start(){
             //reference: http://stackoverflow.com/questions/750486/javascript-closure-inside-loops-simple-practical-example
             //get data from server and compare the differences
             sql.connection.query("SELECT * from schedule WHERE date >= ? AND name = ? ORDER BY date ASC, time ASC, room ASC", [query_origin_date, query_origin_name], function(err, rows_origin, fields_origin){
-                if(err) throw err;
+                if(err)
+                {
+                    if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                    else throw err;
+                }
                 var chk_ptr = 0;    //pointer points to the original acquire from database
                 var front_ptr = 0;  //pointer points to the incoming data
                 var rows_origin_marker = []; //marker use to save which checkbox is identical to the one on database
@@ -542,7 +562,11 @@ function start(){
                         name: fields[0]
                     };
                     sql.connection.query("SELECT * from `schedule` WHERE `date` = ? AND `time` = ? AND `room` = ?", [qry_esc_date, qry_esc_time, qry_esc_room],function(err, rows_chk, fields_func){
-                        if(err) throw err;
+                        if(err)
+                        {
+                            if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                            else throw err;
+                        }
                         if(rows_chk.length === 0)   //not occupied
                         {
                             changes.add.push(sql_str_written_escape_obj);
@@ -571,13 +595,21 @@ function start(){
         /*  execute query   */
                     changes.min.forEach(function(element, index, array){
                         sql.connection.query("DELETE FROM `schedule` WHERE `id` = ?", element.id, function(err, rows_query_del, fields_func){
-                            if (err) throw err;
+                            if(err)
+                            {
+                                if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                                else throw err;
+                            }
                             console.log(this.sql);
                         });
                     });
                     changes.add.forEach(function(element, index, array){
                         sql.connection.query("INSERT INTO `schedule` SET ?", element,function(err, rows_sql_str_written, fields_func){
-                            if(err) throw err;
+                            if(err)
+                            {
+                                if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                                else throw err;
+                            }
                             console.log(this.sql);
                         });
                     });
@@ -679,7 +711,11 @@ function start(){
                         name: fields_parse_date[index][3]
                     };
                     sql.connection.query("INSERT INTO `schedule` SET ?", sql_str_written_escape_obj, function(err, rows_sql_str_written, fields_func){
-                        if(err) throw err;
+                        if(err)
+                        {
+                            if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                            else throw err;
+                        }
                         console.log(this.sql);
                     });
                 });
@@ -688,7 +724,11 @@ function start(){
                     if(element === -1) return true;
                     var sql_str_written_escape_arr = [fields_parse_date[index][0].getFullYear() + "-" + (fields_parse_date[index][0].getMonth() + 1) + "-" + fields_parse_date[index][0].getDate(), Number(fields_parse_date[index][1]), Number(fields_parse_date[index][2]), fields_parse_date[index][3], element];
                     sql.connection.query("UPDATE `schedule` SET `date` = ?, `time` = ?,`room` = ?, `name` = ? WHERE `id` = ?", sql_str_written_escape_arr, function(err, rows_sql_updated, fields_func){
-                        if(err) throw err;
+                        if(err)
+                        {
+                            if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                            else throw err;
+                        }
                         console.log(this.sql);
                     });
                 });
@@ -756,7 +796,11 @@ function start(){
                 //TODO: MAKESURE THE DIRECTORY ON OPENSHIFT HAS ITEM, ENSUREFILE SEEMS NOT WORK ON SERVER DUE TO PERMISSION
                 fs.ensureFile(path.join(bulletin_, "image.jpg"), function(err)
                 {
-                    if(err) throw err;
+                    if(err)
+                    {
+                        if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                        else throw err;
+                    }
                     //delete the original file
                     fs.remove(path.join(bulletin_, "image.jpg"), function(err)
                     {
