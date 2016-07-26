@@ -30,7 +30,7 @@ var handleDisconnect = function()
         }
         else console.log('reconnected to database');
     });
-}
+};
 
 connection.connect();
 

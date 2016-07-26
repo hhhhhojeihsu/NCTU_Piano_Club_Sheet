@@ -234,7 +234,7 @@ function start(){
             body += "<form method='post' enctype='multipart/form-data' action='/upload'>";
             body += "<label class='myLabel'>";
             body += "<input type='file' name='fileupload' accept='image/jpeg' required>";
-            body += "<span>選擇檔案</span>"
+            body += "<span>選擇檔案</span>";
             body += "</label>";
             body += "<input class='btn btn-primary' type='submit' value='送出'>";
             body += "</form>";
@@ -470,120 +470,136 @@ function start(){
             //since data sent from html page is sorted by time, date, room
             //re-sort it by date, time, room
             query.sort(sortby_dtm);
-            var query_origin_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate();
-            var query_origin_name = fields[0];
-            //reference: http://stackoverflow.com/questions/750486/javascript-closure-inside-loops-simple-practical-example
-            //get data from server and compare the differences
-            sql.connection.query("SELECT * from schedule WHERE date >= ? AND name = ? ORDER BY date ASC, time ASC, room ASC", [query_origin_date, query_origin_name], function(err, rows_origin, fields_origin){
-                if(err)
-                {
-                    if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
-                    else throw err;
-                }
-                var chk_ptr = 0;    //pointer points to the original acquire from database
-                var front_ptr = 0;  //pointer points to the incoming data
-                var rows_origin_marker = []; //marker use to save which checkbox is identical to the one on database
-                var rows_front_marker = [];
-                /*  initialize the marker array */
-                for(var ctr_marker = 0; ctr_marker < rows_origin.length; ++ctr_marker)
-                {
-                    rows_origin_marker[ctr_marker] = false;
-                    //false : del, true: no change
-                }
-                for(var ctr_marker = 0; ctr_marker < query.length; ++ctr_marker)
-                {
-                    rows_front_marker[ctr_marker] = false;
-                    //false: insert queue, true: no change
-                }
-                /*  iterating through all checkboxes    */
-                query.forEach(function(element, index, array) {
-
-                    //if(index === array.length - 1)
-                    //it means that if the iteration is about to end, then call the function to delete data
-                    //structure original used to prevent callback hell, but failed
-
-                    /*  compare with data on sql    */
-                    //reference: http://stackoverflow.com/questions/7244513/javascript-date-comparisons-dont-equal
-                    //if the data point to is earlier than current pointed date object
-                    //keep point to the next one until it's equal or bigger than
-                    while (
-                    chk_ptr < rows_origin.length &&
-                    (rows_origin[chk_ptr].date < element[0] || (rows_origin[chk_ptr].date.getTime() === element[0].getTime() && rows_origin[chk_ptr].time < element[1]) || (rows_origin[chk_ptr].date.getTime() === element[0].getTime() && rows_origin[chk_ptr].time === element[1] && rows_origin[chk_ptr].room < element[2]))
-                        ) {
-                        ++chk_ptr;
-                    }
-                    //the record remain unchanged
-                    if (
-                        chk_ptr < rows_origin.length &&
-                        (rows_origin[chk_ptr].date.getFullYear() === element[0].getFullYear() &&
-                        rows_origin[chk_ptr].date.getMonth() === element[0].getMonth() &&
-                        rows_origin[chk_ptr].date.getDate() === element[0].getDate() &&
-                        rows_origin[chk_ptr].time === element[1] &&
-                        rows_origin[chk_ptr].room === element[2])
-                    ) {
-                        rows_origin_marker[chk_ptr] = true;
-                        rows_front_marker[front_ptr] = true;
-                        ++chk_ptr;
-                        ++front_ptr;
-                        //reference: http://stackoverflow.com/questions/18452920/continue-in-cursor-foreach
-                    }
-                    else {
-                        ++front_ptr;
-                    }
-                });
-                /*  website part. query is execute after this   */
-                //deletion
-                rows_origin_marker.forEach(function(element, index, array){
-                    if(element) return true;
-                    //push into changed
-                    changes.min.push({
-                        date: rows_origin[index].date.getFullYear() + "-" + (rows_origin[index].date.getMonth() + 1) + "-" + rows_origin[index].date.getDate(),
-                        time: rows_origin[index].time,
-                        room: rows_origin[index].room,
-                        name: fields[0],
-                        id: rows_origin[index].id
-                    });
-                });
-                //addition or error
-                rows_front_marker.forEach(function(element, index, array){
-                    if(element)
+            if(!validateForm_user(query))
+            {
+                //data sent from modified front-end
+                console.log("'" + fields[0] + "' illegally modified front-end");
+                responseUserPage_Error(res);
+            }
+            else
+            {
+                var query_origin_date = FirstDayOfWeek.getFullYear() + '-' + (FirstDayOfWeek.getMonth() + 1) + '-' + FirstDayOfWeek.getDate();
+                var query_origin_name = fields[0];
+                //reference: http://stackoverflow.com/questions/750486/javascript-closure-inside-loops-simple-practical-example
+                //get data from server and compare the differences
+                sql.connection.query("SELECT * from schedule WHERE date >= ? AND name = ? ORDER BY date ASC, time ASC, room ASC", [query_origin_date, query_origin_name], function(err, rows_origin, fields_origin){
+                    if(err)
                     {
-                        if(index === array.length - 1) responseUserPage(res, changes);
-                        return true;
+                        if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                        else throw err;
                     }
-                    //check if the field is already filled
-                    var qry_esc_date = query[index][0].getFullYear() + "-" + (query[index][0].getMonth() + 1) + "-" + query[index][0].getDate();
-                    var qry_esc_time = query[index][1];
-                    var qry_esc_room = query[index][2];
-                    var sql_str_written_escape_obj = {
-                        date: qry_esc_date,
-                        time: qry_esc_time,
-                        room: qry_esc_room,
-                        name: fields[0]
-                    };
-                    sql.connection.query("SELECT * from `schedule` WHERE `date` = ? AND `time` = ? AND `room` = ?", [qry_esc_date, qry_esc_time, qry_esc_room],function(err, rows_chk, fields_func){
-                        if(err)
-                        {
-                            if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
-                            else throw err;
-                        }
-                        if(rows_chk.length === 0)   //not occupied
-                        {
-                            changes.add.push(sql_str_written_escape_obj);
-                        }
-                        else    //error
-                        {
-                            changes.error.push(sql_str_written_escape_obj);
-                            console.log("INSERT INTO `schedule` SET date = " + qry_esc_date + " time = " + qry_esc_time + " room = " + qry_esc_room + " Failed");
-                        }
-                        if(index === array.length - 1) responseUserPage(res, changes);
-                    });
-                });
-                if(rows_front_marker.length === 0) responseUserPage(res, changes);
+                    var chk_ptr = 0;    //pointer points to the original acquire from database
+                    var front_ptr = 0;  //pointer points to the incoming data
+                    var rows_origin_marker = []; //marker use to save which checkbox is identical to the one on database
+                    var rows_front_marker = [];
+                    /*  initialize the marker array */
+                    for(var ctr_marker = 0; ctr_marker < rows_origin.length; ++ctr_marker)
+                    {
+                        rows_origin_marker[ctr_marker] = false;
+                        //false : del, true: no change
+                    }
+                    for(var ctr_marker = 0; ctr_marker < query.length; ++ctr_marker)
+                    {
+                        rows_front_marker[ctr_marker] = false;
+                        //false: insert queue, true: no change
+                    }
+                    /*  iterating through all checkboxes    */
+                    query.forEach(function(element, index, array) {
 
-            });
+                        //if(index === array.length - 1)
+                        //it means that if the iteration is about to end, then call the function to delete data
+                        //structure original used to prevent callback hell, but failed
+
+                        /*  compare with data on sql    */
+                        //reference: http://stackoverflow.com/questions/7244513/javascript-date-comparisons-dont-equal
+                        //if the data point to is earlier than current pointed date object
+                        //keep point to the next one until it's equal or bigger than
+                        while (
+                        chk_ptr < rows_origin.length &&
+                        (rows_origin[chk_ptr].date < element[0] || (rows_origin[chk_ptr].date.getTime() === element[0].getTime() && rows_origin[chk_ptr].time < element[1]) || (rows_origin[chk_ptr].date.getTime() === element[0].getTime() && rows_origin[chk_ptr].time === element[1] && rows_origin[chk_ptr].room < element[2]))
+                            ) {
+                            ++chk_ptr;
+                        }
+                        //the record remain unchanged
+                        if (
+                            chk_ptr < rows_origin.length &&
+                            (rows_origin[chk_ptr].date.getFullYear() === element[0].getFullYear() &&
+                            rows_origin[chk_ptr].date.getMonth() === element[0].getMonth() &&
+                            rows_origin[chk_ptr].date.getDate() === element[0].getDate() &&
+                            rows_origin[chk_ptr].time === element[1] &&
+                            rows_origin[chk_ptr].room === element[2])
+                        ) {
+                            rows_origin_marker[chk_ptr] = true;
+                            rows_front_marker[front_ptr] = true;
+                            ++chk_ptr;
+                            ++front_ptr;
+                            //reference: http://stackoverflow.com/questions/18452920/continue-in-cursor-foreach
+                        }
+                        else {
+                            ++front_ptr;
+                        }
+                    });
+                    /*  website part. query is execute after this   */
+                    //deletion
+                    rows_origin_marker.forEach(function(element, index, array){
+                        if(element) return true;
+                        //push into changed
+                        changes.min.push({
+                            date: rows_origin[index].date.getFullYear() + "-" + (rows_origin[index].date.getMonth() + 1) + "-" + rows_origin[index].date.getDate(),
+                            time: rows_origin[index].time,
+                            room: rows_origin[index].room,
+                            name: fields[0],
+                            id: rows_origin[index].id
+                        });
+                    });
+                    //addition or error
+                    rows_front_marker.forEach(function(element, index, array){
+                        if(element)
+                        {
+                            if(index === array.length - 1) responseUserPage(res, changes);
+                            return true;
+                        }
+                        //check if the field is already filled
+                        var qry_esc_date = query[index][0].getFullYear() + "-" + (query[index][0].getMonth() + 1) + "-" + query[index][0].getDate();
+                        var qry_esc_time = query[index][1];
+                        var qry_esc_room = query[index][2];
+                        var sql_str_written_escape_obj = {
+                            date: qry_esc_date,
+                            time: qry_esc_time,
+                            room: qry_esc_room,
+                            name: fields[0]
+                        };
+                        sql.connection.query("SELECT * from `schedule` WHERE `date` = ? AND `time` = ? AND `room` = ?", [qry_esc_date, qry_esc_time, qry_esc_room],function(err, rows_chk, fields_func){
+                            if(err)
+                            {
+                                if(err.code === 'PROTOCOL_CONNECTION_LOST') sql.handleDisconnect();
+                                else throw err;
+                            }
+                            if(rows_chk.length === 0)   //not occupied
+                            {
+                                changes.add.push(sql_str_written_escape_obj);
+                            }
+                            else    //error
+                            {
+                                changes.error.push(sql_str_written_escape_obj);
+                                console.log("INSERT INTO `schedule` SET date = " + qry_esc_date + " time = " + qry_esc_time + " room = " + qry_esc_room + " Failed");
+                            }
+                            if(index === array.length - 1) responseUserPage(res, changes);
+                        });
+                    });
+                    if(rows_front_marker.length === 0) responseUserPage(res, changes);
+                });
+            }
         });
         form.parse(req);
+    }
+    function responseUserPage_Error(res)
+    {
+        res.writeHead(200, {
+            'Content-Type': 'text/html'
+        });
+        res.write(BuildUserHtmlError());
+        res.end();
     }
     function responseUserPage(res, changes)
     {
@@ -889,7 +905,7 @@ function BuildAdminResult(state)
     head += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
     head += "<meta http-equiv='refresh' content='3;url=" + ip_address_re_ + "'>";
     if(state === 0) body += "所有變動都已儲存，網頁將在3秒鐘後自動導向至首頁。";
-    else if(state === 1) body += "檔案大小超過上限，網頁將在3秒鐘後自動導向至首頁。"
+    else if(state === 1) body += "檔案大小超過上限，網頁將在3秒鐘後自動導向至首頁。";
     else body += "檔案格式錯誤，網頁將在3秒鐘後自動導向至首頁。";
     body += redirect_2_front_page;
     return "<!DOCTYPE html>\n<html lang='zh-Hant'>" +  "<head>" + head + "</head>" + "<body>" + body + "</body>" + "<footer>" + footer + "</footer>" + "</html>";
@@ -1134,5 +1150,56 @@ function GenerateTimeLabel(ctr_hr, mode)
     return body;
 }
 
+function validateForm_user(query)
+{
+    //record is an array of object, each element for user. and object contains its weekly, daily and daily room appointment.
+    var record = [];
+    var weekly = 0;
+
+    for(var ctr_qry = 0; ctr_qry < query.length; ++ctr_qry)
+    {
+        if(record[query[ctr_qry][0]] === undefined) //found it first time
+        {
+            ++weekly;
+            record[query[ctr_qry][0]] = {daily: 1, daily_room: []};
+            record[query[ctr_qry][0]].daily_room[query[ctr_qry][1]] = 1;
+            if(weekly > 8)
+            {
+                console.log(record);
+                return false;
+            }
+        }
+        else
+        {
+            ++weekly;
+            ++record[query[ctr_qry][0]].daily;
+            if(record[query[ctr_qry][0]].daily_room[query[ctr_qry][1]] !== undefined ||
+               record[query[ctr_qry][0]].daily > 3 ||
+               weekly > 8
+            )
+            {
+                console.log(record);
+                return false;
+            }
+            record[query[ctr_qry][0]].daily_room[query[ctr_qry][1]] = 1;
+        }
+    }
+    return true;
+}
+
+function BuildUserHtmlError()
+{
+    var head = "";
+    head += "<meta charset='UTF-8'>";
+    head += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+    head += "<meta http-equiv='refresh' content='10;url=" + ip_address_re_ + "'>";
+    var body = "";
+    var footer = "";
+    body += "本系統是基於JavaScript撰寫，請將之啟用，又或是程式碼有bug請跟管理員聯絡(又或是請不要任意更改網頁原始碼，以免造成其他使用者的困惹)。此次的變更將不會儲存。<br>";
+    body += "系統將在10秒後從新導向至首頁";
+    body += redirect_2_front_page;
+    return "<!DOCTYPE html>\n<html lang='zh-Hant'>" +  "<head>" + head + "</head>" + "<body>" + body + "</body>" + "<footer>" + footer + "</footer>" + "</html>";
+
+}
 
 exports.start = start;
