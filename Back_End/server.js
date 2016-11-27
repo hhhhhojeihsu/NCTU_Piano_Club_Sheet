@@ -1043,7 +1043,8 @@ function change_html_path(target)
 function getdays_this_mon()
 {
     var f = getFirstDayOfWeek();
-    return ((new Date(f.getFullYear(), f.getMonth() + 1, 1)) - (new Date(f.getFullYear(), f.getMonth(), 1)))/60/60/24/1000;
+    //reference: http://stackoverflow.com/a/4881968
+    return Math.round(((new Date(f.getFullYear(), f.getMonth() + 1, 1)) - (new Date(f.getFullYear(), f.getMonth(), 1)))/60/60/24/1000);
 }
 
 function getFirstDayOfWeek()
