@@ -971,10 +971,14 @@ function BuildHtmlResult(array_obj)
     //show the changes
     if(array_obj.add.length === 0 && array_obj.min.length === 0 && array_obj.error.length === 0)
     {
-        body += "甚麼事情都沒有發生0.0\n";
+        body += "甚麼事情都沒有發生0.0";
+        body += "<br>"
         body += "如果您明明有變更但是卻看到此頁面的話，那您遇到了一個已知的bug";
+        body += "<br>"
         body += "起因是您原本已經有預約這個禮拜的琴房，但是您這次又再預約了比上次預約的時段更早的時段"
+        body += "<br>"
         body += "目前暫時性的解決方式是將這個禮拜預約的時段全數取消並送出後，再一次將您想要的時段勾選後送出"
+        body += "<br>"
         body += "由於此bug牽涉到系統的架構，短時間內無法被修復，在此訊息消失之前造成不便還敬請見諒"
     }
     else body += "此次變動<br>";
