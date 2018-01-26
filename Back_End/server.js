@@ -13,12 +13,12 @@ var sql = require('./sql');
     1 for openshift mode and 0 for localhost mode
     //NOTE THAT THE MODE IN sql.js need to be changed as well
  */
-var mode_selection = 1;
+var mode_selection = 0;
 
 /*  mode related variable   */
-var ip_address_re_ = mode_selection ? 'http://nodejs-wwwworkspace.rhcloud.com/' : 'http://localhost:8888/';
-var ip_address_local_ = mode_selection ? process.env.OPENSHIFT_NODEJS_IP : '127.0.0.1';
-var port_ = mode_selection ? process.env.OPENSHIFT_NODEJS_PORT : '8888';
+var ip_address_re_ = mode_selection ? 'http://nodejs-wwwworkspace.rhcloud.com/' : 'http://liaouc.seac.nctu.edu.tw:8000/';
+var ip_address_local_ = mode_selection ? process.env.OPENSHIFT_NODEJS_IP : '0.0.0.0';
+var port_ = mode_selection ? process.env.OPENSHIFT_NODEJS_PORT : '8000';
 var bulletin_ = mode_selection ? path.join(process.env.OPENSHIFT_DATA_DIR, 'images') : path.join(__dirname, '..', 'Front_End', 'images');
 //bulletin_ store the location of image on index.html
 
@@ -266,6 +266,15 @@ function start(){
             res.end(BuildNameError());
             return;
         }
+		/* user_id cannot be undefined */
+		if(user_id === 'undefined')
+		{
+			res.writeHead(200, {
+				'Content-Type': 'text/html'
+			});
+			res.end("<!DOCTYPE html><html lang='zh-Hant'><head><meta charset='UTF-8'><meta http-equiv='refresh' content='3;url=" + ip_address_re_ + "'></head><body>請將瀏覽器的擴充元件關閉(Adblock, Ublock Origin, Privacy Badger等)，或是換個瀏覽器試試看。如果仍出現此頁面，請與網管聯絡。謝謝</body></html>");
+			return;
+		}
         /*  get data from sql server where name is provided from last page   */
         //not that the array is sort by date time then room
         sql.connection.query("SELECT * FROM schedule WHERE date >= ? AND name = ? ORDER BY date ASC, time ASC, room ASC", [query_esc_date, query_esc_name], function(err, rows, fields)
@@ -964,7 +973,7 @@ function BuildHtmlResult(array_obj)
     head += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
     head += "<meta charset='UTF-8'>";
     head += "<title>交通大學鋼琴社琴房預約系統</title>";
-    head += "<link rel='stylesheet' type='text/css' href='http://nodejs-wwwworkspace.rhcloud.com/Style_user.css'>";
+	head += "<link rel='stylesheet' type='text/css' href='http://liaouc.seac.nctu.edu.tw:8000/Style_user.css'>";
     head += "<script type='text/javascript' src='/fb.js'></script>";
 
     /*  body    */
@@ -1032,13 +1041,13 @@ function change_html_path(target)
         if(mode_selection)    //openshift mode
         {
             if(target === 'fb.js') result = data.replace(/140237553072177/g, '139264433169489');
-            else result = data.replace(/localhost:8888/g, 'nodejs-wwwworkspace.rhcloud.com');
+			else result = data.replace(/liaouc.seac.nctu.edu.tw:8000/g, 'nodejs-wwwworkspace.rhcloud.com');
             console.log(target + ' modify to openshift mode');
         }
         else
         {
             if(target === 'fb.js') result = data.replace(/139264433169489/g, '140237553072177');
-            else result = data.replace(/nodejs-wwwworkspace.rhcloud.com/g, 'localhost:8888');
+			else result = data.replace(/nodejs-wwwworkspace.rhcloud.com/g, 'liaouc.seac.nctu.edu.tw:8000');
             console.log(target + ' modify to localhost mode');
         }
         fs.writeFile(file, result, function(err, data){
